@@ -74,7 +74,10 @@ func (r *RedisJWTHandler) SetJWTToken(ctx *gin.Context, uid int64, ssid string) 
 }
 
 func (r *RedisJWTHandler) CheckSession(ctx *gin.Context, ssid string) error {
+	fmt.Println("ssid:", ssid)
 	cnt, err := r.client.Exists(ctx, fmt.Sprintf("users:ssid:%s", ssid)).Result()
+	fmt.Println("cnt:", cnt)
+	fmt.Println("err:", err)
 	if err != nil {
 		return err
 	}

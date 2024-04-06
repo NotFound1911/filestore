@@ -1,11 +1,12 @@
 package v1
 
 import (
-	"github.com/NotFound1911/filestore/domain"
+	"fmt"
+	userv1 "github.com/NotFound1911/filestore/app/account/api/proto/gen/user/v1"
+	"github.com/NotFound1911/filestore/app/account/service"
 	"github.com/NotFound1911/filestore/errs"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
-	server2 "github.com/NotFound1911/filestore/pkg/server"
-	"github.com/NotFound1911/filestore/service"
+	serv "github.com/NotFound1911/filestore/pkg/server"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -22,107 +23,108 @@ type UserHandler struct {
 	jwt.Handler
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
-	svc            service.UserService
+	client         userv1.UserServiceClient
 }
 
-func NewUserHandler(svc service.UserService,
+func NewUserHandler(client userv1.UserServiceClient,
 	hdl jwt.Handler) *UserHandler {
 	return &UserHandler{
 		emailRexExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRexExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
-		svc:            svc,
+		client:         client,
 		Handler:        hdl,
 	}
 }
-func (u *UserHandler) SignUp(ctx *gin.Context, req SignUpReq) (server2.Result, error) {
+func (u *UserHandler) Signup(ctx *gin.Context, req SignupReq) (serv.Result, error) {
 	isEmail, err := u.emailRexExp.MatchString(req.Email)
 	if err != nil {
-		return server2.Result{
+		return serv.Result{
 			Code: errs.UserInvalidInput,
 			Msg:  "系统错误",
 		}, err
 	}
 	if !isEmail {
-		return server2.Result{
+		return serv.Result{
 			Code: errs.UserInvalidInput,
 			Msg:  "非法邮箱格式",
 		}, nil
 	}
 	if req.Password != req.ConfirmPassword {
-		return server2.Result{
+		return serv.Result{
 			Code: errs.UserInvalidInput,
 			Msg:  "两次输入的密码不相等",
 		}, nil
 	}
 	isPassword, err := u.passwordRexExp.MatchString(req.Password)
 	if err != nil {
-		return server2.Result{
+		return serv.Result{
 			Code: errs.UserInternalServerError,
 			Msg:  "系统错误",
 		}, err
 	}
 	if !isPassword {
-		return server2.Result{
+		return serv.Result{
 			Code: errs.UserInvalidInput,
 			Msg:  "密码必须包含字母、数字、特殊字符,并且不少于八位",
 		}, nil
 	}
-	err = u.svc.Signup(ctx.Request.Context(), domain.User{
+	_, err = u.client.Signup(ctx.Request.Context(), &userv1.SignupReq{
+		User: &userv1.User{
+			Email:    req.Email,
+			Password: req.Password,
+		},
+	})
+	if err != nil {
+		return serv.Result{
+			Code: errs.UserInternalServerError,
+			Msg:  "注册失败",
+			Data: err.Error(),
+		}, err
+	}
+	return serv.Result{
+		Code: 2000,
+		Msg:  "注册成功",
+	}, nil
+}
+func (u *UserHandler) LoginJWT(ctx *gin.Context, req LoginJWTReq) (serv.Result, error) {
+	user, err := u.client.Login(ctx, &userv1.LoginReq{
 		Email:    req.Email,
 		Password: req.Password,
 	})
 	switch err {
 	case nil:
-		return server2.Result{
-			Msg: "OK",
-		}, nil
-	case service.ErrDuplicateEmail:
-		return server2.Result{
-			Code: errs.UserDuplicateEmail,
-			Msg:  "邮箱冲突",
-		}, nil
-	default:
-		return server2.Result{
-			Code: errs.UserInternalServerError,
-			Msg:  "系统错误",
-		}, err
-	}
-}
-func (u *UserHandler) LoginJWT(ctx *gin.Context, req LoginJWTReq) (server2.Result, error) {
-	user, err := u.svc.Login(ctx, req.Email, req.Password)
-	switch err {
-	case nil:
 		err = u.SetLoginToken(ctx, user.Id)
 		if err != nil {
-			return server2.Result{
+			return serv.Result{
 				Code: -1,
 				Msg:  "系统错误",
 			}, err
 		}
-		return server2.Result{
+		return serv.Result{
 			Msg: "OK",
 		}, nil
 	case service.ErrInvalidUserOrPassword:
-		return server2.Result{Msg: "用户名或者密码错误"}, nil
+		return serv.Result{Msg: "用户名或者密码错误"}, nil
 	default:
-		return server2.Result{Msg: "系统错误"}, err
+		return serv.Result{Msg: "系统错误"}, err
 	}
 }
 func (u *UserHandler) LogoutJWT(ctx *gin.Context) {
 	err := u.ClearToken(ctx)
 	if err != nil {
-		ctx.JSON(http.StatusOK, server2.Result{Code: -1, Msg: "系统错误"})
+		ctx.JSON(http.StatusOK, serv.Result{Code: -1, Msg: "系统错误"})
 		return
 	}
-	ctx.JSON(http.StatusOK, server2.Result{Msg: "退出登录成功"})
+	ctx.JSON(http.StatusOK, serv.Result{Msg: "退出登录成功"})
 }
 func (u *UserHandler) Profile(ctx *gin.Context,
-	uc jwt.UserClaims) (server2.Result, error) {
-	//us := ctx.MustGet("user").(UserClaims)
-	//ctx.String(api.StatusOK, "这是 profile")
-	user, err := u.svc.FindById(ctx, uc.Uid)
+	uc jwt.UserClaims) (serv.Result, error) {
+	fmt.Println("111111111111")
+	user, err := u.client.Profile(ctx, &userv1.ProfileReq{
+		Id: uc.Uid,
+	})
 	if err != nil {
-		return server2.Result{
+		return serv.Result{
 			Code: 5,
 			Msg:  "系统错误",
 		}, err
@@ -130,19 +132,23 @@ func (u *UserHandler) Profile(ctx *gin.Context,
 	type User struct {
 		Name  string `json:"name"`
 		Email string `json:"email"`
+		Phone string `json:"phone"`
 	}
-	return server2.Result{
+	return serv.Result{
+		Code: 2000,
+		Msg:  "ok",
 		Data: User{
-			Name:  user.Name,
-			Email: user.Email,
+			Name:  user.User.Name,
+			Email: user.User.Email,
+			Phone: user.User.Phone,
 		},
 	}, nil
 }
 func (u *UserHandler) RegisterUserRoutes(core *gin.Engine) {
 
 	ug := core.Group("/api/storage/v1/users")
-	ug.POST("/signup", server2.WrapBody(u.SignUp))
-	ug.POST("/login", server2.WrapBody(u.LoginJWT))
+	ug.POST("/signup", serv.WrapBody(u.Signup))
+	ug.POST("/login", serv.WrapBody(u.LoginJWT))
 	ug.POST("/logout", u.LogoutJWT)
-	ug.GET("/profile", server2.WrapClaims(u.Profile))
+	ug.GET("/profile", serv.WrapClaims(u.Profile))
 }

@@ -1,18 +1,19 @@
 package middleware
 
 import (
-	ijwt "github.com/NotFound1911/filestore/api/v1/jwt"
-	"github.com/NotFound1911/filestore/internal/server"
+	"fmt"
+	jwt2 "github.com/NotFound1911/filestore/internal/web/jwt"
+	"github.com/NotFound1911/filestore/pkg/server"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 )
 
 type LoginJWTMiddlewareBuilder struct {
-	ijwt.Handler
+	jwt2.Handler
 }
 
-func NewLoginJWTMiddlewareBuilder(hdl ijwt.Handler) *LoginJWTMiddlewareBuilder {
+func NewLoginJWTMiddlewareBuilder(hdl jwt2.Handler) *LoginJWTMiddlewareBuilder {
 	return &LoginJWTMiddlewareBuilder{
 		Handler: hdl,
 	}
@@ -27,11 +28,14 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 		tokenStr := m.ExtractToken(ctx)
-		var uc ijwt.UserClaims
+		var uc jwt2.UserClaims
 		token, err := jwt.ParseWithClaims(tokenStr, &uc, func(token *jwt.Token) (interface{}, error) {
-			return ijwt.JWTKey, nil
+			return jwt2.JWTKey, nil
 		})
+		fmt.Println("token:", token)
+		fmt.Println("err:", err)
 		if err != nil {
+			fmt.Println("222")
 			// token 不对，token 是伪造的
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, server.Result{
 				Code: -1,
@@ -40,6 +44,7 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 		if token == nil || !token.Valid {
+			fmt.Println("1111")
 			// 在这里发现 access_token 过期了，生成一个新的 access_token
 			// token 解析出来了，但是 token 可能是非法的，或者过期了的
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, server.Result{
@@ -49,8 +54,10 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			return
 		}
 		// 这里看
+		fmt.Println("uc.Ssid:", uc.Ssid)
 		err = m.CheckSession(ctx, uc.Ssid)
 		if err != nil {
+			fmt.Println("333333 ", err)
 			// token 无效或者 redis 有问题
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, server.Result{
 				Code: -1,

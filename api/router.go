@@ -3,8 +3,8 @@ package api
 import (
 	"fmt"
 	"github.com/NotFound1911/filestore/api/v1"
-	"github.com/NotFound1911/filestore/api/v1/jwt"
-	"github.com/NotFound1911/filestore/api/v1/middleware"
+	"github.com/NotFound1911/filestore/internal/web/jwt"
+	"github.com/NotFound1911/filestore/internal/web/middleware"
 	"github.com/NotFound1911/filestore/repository"
 	"github.com/NotFound1911/filestore/repository/dao"
 	"github.com/NotFound1911/filestore/service"

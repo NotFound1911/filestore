@@ -37,6 +37,8 @@ func WrapClaims[Claims any](
 ) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		val, ok := ctx.Get("user")
+		fmt.Println("val:", val)
+		fmt.Println("ok:", ok)
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, Result{
 				Code: -1,
@@ -45,6 +47,8 @@ func WrapClaims[Claims any](
 			return
 		}
 		uc, ok := val.(Claims)
+		fmt.Println("uc:", uc)
+		fmt.Println("ok:", ok)
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, Result{
 				Code: -1,
