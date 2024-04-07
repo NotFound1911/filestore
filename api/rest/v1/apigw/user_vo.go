@@ -1,4 +1,4 @@
-package v1
+package apigw
 
 type SignupReq struct {
 	Email           string `json:"email"`

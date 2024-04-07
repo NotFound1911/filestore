@@ -2,8 +2,8 @@ package main
 
 import (
 	"context"
-	userv1 "github.com/NotFound1911/filestore/app/account/api/proto/gen/user/v1"
-	v1 "github.com/NotFound1911/filestore/app/apigw/api/v1"
+	accountv1 "github.com/NotFound1911/filestore/api/proto/gen/account/v1"
+	v1 "github.com/NotFound1911/filestore/api/rest/v1/apigw"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	"github.com/NotFound1911/filestore/internal/web/middleware"
 	"github.com/gin-gonic/gin"
@@ -37,7 +37,7 @@ func main() {
 		grpc.WithDiscovery(r),
 	)
 	defer cc.Close()
-	client := userv1.NewUserServiceClient(cc)
+	client := accountv1.NewAccountServiceClient(cc)
 
 	userHandler := v1.NewUserHandler(client, hdl)
 	userHandler.RegisterUserRoutes(server)

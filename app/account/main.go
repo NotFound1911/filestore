@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	userv1 "github.com/NotFound1911/filestore/app/account/api/proto/gen/user/v1"
+	"github.com/NotFound1911/filestore/api/proto/gen/account/v1"
 	gprcserv "github.com/NotFound1911/filestore/app/account/grpc"
 	"github.com/NotFound1911/filestore/app/account/ioc"
 	"github.com/NotFound1911/filestore/app/account/repository"
@@ -38,7 +38,7 @@ func main() {
 	// grpc
 	account := gprcserv.NewAccountServiceServer(userService)
 	// **************
-	userv1.RegisterUserServiceServer(grpcSrv, account)
+	accountv1.RegisterAccountServiceServer(grpcSrv, account)
 	// etcd 注册中心
 	r := etcd.New(cli)
 	app := kratos.New(

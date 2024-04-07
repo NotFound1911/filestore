@@ -2,25 +2,25 @@ package grpc
 
 import (
 	"context"
-	userv1 "github.com/NotFound1911/filestore/app/account/api/proto/gen/user/v1"
+	"github.com/NotFound1911/filestore/api/proto/gen/account/v1"
 	"github.com/NotFound1911/filestore/app/account/domain"
 	"github.com/NotFound1911/filestore/app/account/service"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AccountServiceServer struct {
-	userv1.UnimplementedUserServiceServer
+	accountv1.UnimplementedAccountServiceServer
 	svc service.UserService
 }
 
 func NewAccountServiceServer(svc service.UserService) *AccountServiceServer {
 	return &AccountServiceServer{svc: svc}
 }
-func (a *AccountServiceServer) Signup(ctx context.Context, req *userv1.SignupReq) (*userv1.SignupResp, error) {
+func (a *AccountServiceServer) Signup(ctx context.Context, req *accountv1.SignupReq) (*accountv1.SignupResp, error) {
 	err := a.svc.Signup(ctx, a.toDomain(req))
-	return &userv1.SignupResp{}, err
+	return &accountv1.SignupResp{}, err
 }
-func (a *AccountServiceServer) toDomain(r *userv1.SignupReq) domain.User {
+func (a *AccountServiceServer) toDomain(r *accountv1.SignupReq) domain.User {
 	creatTimestamp := r.User.CreateAt.AsTime()
 	updateTimestamp := r.User.UpdateAt.AsTime()
 	return domain.User{
@@ -34,14 +34,14 @@ func (a *AccountServiceServer) toDomain(r *userv1.SignupReq) domain.User {
 	}
 }
 
-func (a *AccountServiceServer) Login(ctx context.Context, req *userv1.LoginReq) (*userv1.LoginResp, error) {
+func (a *AccountServiceServer) Login(ctx context.Context, req *accountv1.LoginReq) (*accountv1.LoginResp, error) {
 	user, err := a.svc.Login(ctx, req.Email, req.Password)
-	return &userv1.LoginResp{Id: user.Id}, err
+	return &accountv1.LoginResp{Id: user.Id}, err
 }
-func (a *AccountServiceServer) Profile(ctx context.Context, req *userv1.ProfileReq) (*userv1.ProfileResp, error) {
+func (a *AccountServiceServer) Profile(ctx context.Context, req *accountv1.ProfileReq) (*accountv1.ProfileResp, error) {
 	user, err := a.svc.FindById(ctx, req.Id)
-	return &userv1.ProfileResp{
-		User: &userv1.User{
+	return &accountv1.ProfileResp{
+		User: &accountv1.User{
 			Id:       user.Id,
 			Email:    user.Email,
 			Name:     user.Name,

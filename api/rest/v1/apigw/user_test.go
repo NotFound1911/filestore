@@ -1,11 +1,11 @@
-package v1
+package apigw
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	userv1 "github.com/NotFound1911/filestore/app/account/api/proto/gen/user/v1"
-	usermocks "github.com/NotFound1911/filestore/app/account/api/proto/gen/user/v1/mocks"
+	accountv1 "github.com/NotFound1911/filestore/api/proto/gen/account/v1"
+	accountmocks "github.com/NotFound1911/filestore/api/proto/gen/account/v1/mocks"
 	"github.com/NotFound1911/filestore/app/account/service"
 	"github.com/NotFound1911/filestore/errs"
 	"github.com/NotFound1911/filestore/pkg/server"
@@ -21,7 +21,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		mock func(ctrl *gomock.Controller) userv1.UserServiceClient
+		mock func(ctrl *gomock.Controller) accountv1.AccountServiceClient
 
 		reqBuilder func(t *testing.T) *http.Request
 
@@ -30,14 +30,14 @@ func TestUserHandler_SignUp(t *testing.T) {
 	}{
 		{
 			name: "注册成功",
-			mock: func(ctrl *gomock.Controller) userv1.UserServiceClient {
-				userSvc := usermocks.NewMockUserServiceClient(ctrl)
-				userSvc.EXPECT().Signup(gomock.Any(), &userv1.SignupReq{
-					User: &userv1.User{
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
+				userSvc.EXPECT().Signup(gomock.Any(), &accountv1.SignupReq{
+					User: &accountv1.User{
 						Email:    "123@qq.com",
 						Password: "hello#world123",
 					},
-				}).Return(&userv1.SignupResp{}, nil)
+				}).Return(&accountv1.SignupResp{}, nil)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
@@ -59,8 +59,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "Bind出错",
-			mock: func(ctrl *gomock.Controller) userv1.UserServiceClient {
-				userSvc := usermocks.NewMockUserServiceClient(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
@@ -82,8 +82,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "邮箱格式不对",
-			mock: func(ctrl *gomock.Controller) userv1.UserServiceClient {
-				userSvc := usermocks.NewMockUserServiceClient(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
@@ -106,8 +106,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "两次密码输入不同",
-			mock: func(ctrl *gomock.Controller) userv1.UserServiceClient {
-				userSvc := usermocks.NewMockUserServiceClient(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
@@ -130,8 +130,8 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "密码格式不对",
-			mock: func(ctrl *gomock.Controller) userv1.UserServiceClient {
-				userSvc := usermocks.NewMockUserServiceClient(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
@@ -154,14 +154,14 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "系统错误",
-			mock: func(ctrl *gomock.Controller) userv1.UserServiceClient {
-				userSvc := usermocks.NewMockUserServiceClient(ctrl)
-				userSvc.EXPECT().Signup(gomock.Any(), &userv1.SignupReq{
-					User: &userv1.User{
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
+				userSvc.EXPECT().Signup(gomock.Any(), &accountv1.SignupReq{
+					User: &accountv1.User{
 						Email:    "123@qq.com",
 						Password: "hello#world123",
 					},
-				}).Return(&userv1.SignupResp{}, errors.New("db错误"))
+				}).Return(&accountv1.SignupResp{}, errors.New("db错误"))
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
@@ -184,14 +184,14 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "邮箱冲突",
-			mock: func(ctrl *gomock.Controller) userv1.UserServiceClient {
-				userSvc := usermocks.NewMockUserServiceClient(ctrl)
-				userSvc.EXPECT().Signup(gomock.Any(), &userv1.SignupReq{
-					User: &userv1.User{
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
+				userSvc.EXPECT().Signup(gomock.Any(), &accountv1.SignupReq{
+					User: &accountv1.User{
 						Email:    "123@qq.com",
 						Password: "hello#world123",
 					},
-				}).Return(&userv1.SignupResp{}, service.ErrDuplicateEmail)
+				}).Return(&accountv1.SignupResp{}, service.ErrDuplicateEmail)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {

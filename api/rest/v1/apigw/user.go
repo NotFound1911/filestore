@@ -1,8 +1,7 @@
-package v1
+package apigw
 
 import (
-	"fmt"
-	userv1 "github.com/NotFound1911/filestore/app/account/api/proto/gen/user/v1"
+	"github.com/NotFound1911/filestore/api/proto/gen/account/v1"
 	"github.com/NotFound1911/filestore/app/account/service"
 	"github.com/NotFound1911/filestore/errs"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
@@ -23,10 +22,10 @@ type UserHandler struct {
 	jwt.Handler
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
-	client         userv1.UserServiceClient
+	client         accountv1.AccountServiceClient
 }
 
-func NewUserHandler(client userv1.UserServiceClient,
+func NewUserHandler(client accountv1.AccountServiceClient,
 	hdl jwt.Handler) *UserHandler {
 	return &UserHandler{
 		emailRexExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
@@ -68,8 +67,8 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignupReq) (serv.Result, erro
 			Msg:  "密码必须包含字母、数字、特殊字符,并且不少于八位",
 		}, nil
 	}
-	_, err = u.client.Signup(ctx.Request.Context(), &userv1.SignupReq{
-		User: &userv1.User{
+	_, err = u.client.Signup(ctx.Request.Context(), &accountv1.SignupReq{
+		User: &accountv1.User{
 			Email:    req.Email,
 			Password: req.Password,
 		},
@@ -87,7 +86,7 @@ func (u *UserHandler) Signup(ctx *gin.Context, req SignupReq) (serv.Result, erro
 	}, nil
 }
 func (u *UserHandler) LoginJWT(ctx *gin.Context, req LoginJWTReq) (serv.Result, error) {
-	user, err := u.client.Login(ctx, &userv1.LoginReq{
+	user, err := u.client.Login(ctx, &accountv1.LoginReq{
 		Email:    req.Email,
 		Password: req.Password,
 	})
@@ -119,8 +118,7 @@ func (u *UserHandler) LogoutJWT(ctx *gin.Context) {
 }
 func (u *UserHandler) Profile(ctx *gin.Context,
 	uc jwt.UserClaims) (serv.Result, error) {
-	fmt.Println("111111111111")
-	user, err := u.client.Profile(ctx, &userv1.ProfileReq{
+	user, err := u.client.Profile(ctx, &accountv1.ProfileReq{
 		Id: uc.Uid,
 	})
 	if err != nil {
@@ -145,7 +143,6 @@ func (u *UserHandler) Profile(ctx *gin.Context,
 	}, nil
 }
 func (u *UserHandler) RegisterUserRoutes(core *gin.Engine) {
-
 	ug := core.Group("/api/storage/v1/users")
 	ug.POST("/signup", serv.WrapBody(u.Signup))
 	ug.POST("/login", serv.WrapBody(u.LoginJWT))
