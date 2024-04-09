@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"github.com/NotFound1911/filestore/domain"
+	accountv1 "github.com/NotFound1911/filestore/api/proto/gen/account/v1"
+	accountmocks "github.com/NotFound1911/filestore/api/proto/gen/account/v1/mocks"
+	"github.com/NotFound1911/filestore/app/account/service"
 	"github.com/NotFound1911/filestore/errs"
 	"github.com/NotFound1911/filestore/pkg/server"
-	"github.com/NotFound1911/filestore/service"
-	svcmocks "github.com/NotFound1911/filestore/service/mocks"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
@@ -21,7 +21,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 	testCases := []struct {
 		name string
 
-		mock func(ctrl *gomock.Controller) service.UserService
+		mock func(ctrl *gomock.Controller) accountv1.AccountServiceClient
 
 		reqBuilder func(t *testing.T) *http.Request
 
@@ -30,12 +30,14 @@ func TestUserHandler_SignUp(t *testing.T) {
 	}{
 		{
 			name: "注册成功",
-			mock: func(ctrl *gomock.Controller) service.UserService {
-				userSvc := svcmocks.NewMockUserService(ctrl)
-				userSvc.EXPECT().Signup(gomock.Any(), domain.User{
-					Email:    "123@qq.com",
-					Password: "hello#world123",
-				}).Return(nil)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
+				userSvc.EXPECT().Signup(gomock.Any(), &accountv1.SignupReq{
+					User: &accountv1.User{
+						Email:    "123@qq.com",
+						Password: "hello#world123",
+					},
+				}).Return(&accountv1.SignupResp{}, nil)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
@@ -51,21 +53,22 @@ func TestUserHandler_SignUp(t *testing.T) {
 			},
 			wantCode: http.StatusOK,
 			wantBody: server.Result{
-				Msg: "OK",
+				Msg:  "注册成功",
+				Code: 2000,
 			},
 		},
 		{
 			name: "Bind出错",
-			mock: func(ctrl *gomock.Controller) service.UserService {
-				userSvc := svcmocks.NewMockUserService(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
 					"/api/storage/v1/users/signup", bytes.NewReader([]byte(`{
-"email": "123@qq.com",
-"password": "hello#world"
-}`)))
+		"email": "123@qq.com",
+		"password": "hello#world"
+		}`)))
 				req.Header.Set("Content-Type", "application/json")
 				assert.NoError(t, err)
 				return req
@@ -79,17 +82,17 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "邮箱格式不对",
-			mock: func(ctrl *gomock.Controller) service.UserService {
-				userSvc := svcmocks.NewMockUserService(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
 					"/api/storage/v1/users/signup", bytes.NewReader([]byte(`{
-"email": "123@",
-"password": "hello#world123",
-"confirm_password": "hello#world123"
-}`)))
+		"email": "123@",
+		"password": "hello#world123",
+		"confirm_password": "hello#world123"
+		}`)))
 				req.Header.Set("Content-Type", "application/json")
 				assert.NoError(t, err)
 				return req
@@ -103,17 +106,17 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "两次密码输入不同",
-			mock: func(ctrl *gomock.Controller) service.UserService {
-				userSvc := svcmocks.NewMockUserService(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
 					"/api/storage/v1/users/signup", bytes.NewReader([]byte(`{
-"email": "123@qq.com",
-"password": "hello#world123455",
-"confirm_password": "hello#world123"
-}`)))
+		"email": "123@qq.com",
+		"password": "hello#world123455",
+		"confirm_password": "hello#world123"
+		}`)))
 				req.Header.Set("Content-Type", "application/json")
 				assert.NoError(t, err)
 				return req
@@ -127,17 +130,17 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "密码格式不对",
-			mock: func(ctrl *gomock.Controller) service.UserService {
-				userSvc := svcmocks.NewMockUserService(ctrl)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
 					"/api/storage/v1/users/signup", bytes.NewReader([]byte(`{
-"email": "123@qq.com",
-"password": "hello",
-"confirm_password": "hello"
-}`)))
+		"email": "123@qq.com",
+		"password": "hello",
+		"confirm_password": "hello"
+		}`)))
 				req.Header.Set("Content-Type", "application/json")
 				assert.NoError(t, err)
 				return req
@@ -151,55 +154,61 @@ func TestUserHandler_SignUp(t *testing.T) {
 		},
 		{
 			name: "系统错误",
-			mock: func(ctrl *gomock.Controller) service.UserService {
-				userSvc := svcmocks.NewMockUserService(ctrl)
-				userSvc.EXPECT().Signup(gomock.Any(), domain.User{
-					Email:    "123@qq.com",
-					Password: "hello#world123",
-				}).Return(errors.New("db错误"))
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
+				userSvc.EXPECT().Signup(gomock.Any(), &accountv1.SignupReq{
+					User: &accountv1.User{
+						Email:    "123@qq.com",
+						Password: "hello#world123",
+					},
+				}).Return(&accountv1.SignupResp{}, errors.New("db错误"))
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
 					"/api/storage/v1/users/signup", bytes.NewReader([]byte(`{
-"email": "123@qq.com",
-"password": "hello#world123",
-"confirm_password": "hello#world123"
-}`)))
+		"email": "123@qq.com",
+		"password": "hello#world123",
+		"confirm_password": "hello#world123"
+		}`)))
 				req.Header.Set("Content-Type", "application/json")
 				assert.NoError(t, err)
 				return req
 			},
 			wantBody: server.Result{
 				Code: errs.UserInternalServerError,
-				Msg:  "系统错误",
+				Msg:  "注册失败",
+				Data: "db错误",
 			},
 			wantCode: http.StatusOK,
 		},
 		{
 			name: "邮箱冲突",
-			mock: func(ctrl *gomock.Controller) service.UserService {
-				userSvc := svcmocks.NewMockUserService(ctrl)
-				userSvc.EXPECT().Signup(gomock.Any(), domain.User{
-					Email:    "123@qq.com",
-					Password: "hello#world123",
-				}).Return(service.ErrDuplicateEmail)
+			mock: func(ctrl *gomock.Controller) accountv1.AccountServiceClient {
+				userSvc := accountmocks.NewMockAccountServiceClient(ctrl)
+				userSvc.EXPECT().Signup(gomock.Any(), &accountv1.SignupReq{
+					User: &accountv1.User{
+						Email:    "123@qq.com",
+						Password: "hello#world123",
+					},
+				}).Return(&accountv1.SignupResp{}, service.ErrDuplicateEmail)
 				return userSvc
 			},
 			reqBuilder: func(t *testing.T) *http.Request {
 				req, err := http.NewRequest(http.MethodPost,
 					"/api/storage/v1/users/signup", bytes.NewReader([]byte(`{
-"email": "123@qq.com",
-"password": "hello#world123",
-"confirm_password": "hello#world123"
-}`)))
+		"email": "123@qq.com",
+		"password": "hello#world123",
+		"confirm_password": "hello#world123"
+		}`)))
 				req.Header.Set("Content-Type", "application/json")
 				assert.NoError(t, err)
 				return req
 			},
 			wantBody: server.Result{
-				Code: errs.UserDuplicateEmail,
-				Msg:  "邮箱冲突",
+				Code: errs.UserInternalServerError,
+				Msg:  "注册失败",
+				Data: "邮箱或电话冲突",
 			},
 			wantCode: http.StatusOK,
 		},

@@ -10,5 +10,12 @@ mock:
 
 clean:
 	rm -rf ./api/proto/gen/*
+
+start:
+	# todo
+	go run ./app/account/main.go
+	go run ./app/apigw/main.go
+	go run ./app/upload/main.go
+
 # Default target (run 'make' without arguments)
 all: clean generate mock

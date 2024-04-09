@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	accountv1 "github.com/NotFound1911/filestore/api/proto/gen/account/v1"
-	v1 "github.com/NotFound1911/filestore/api/rest/v1/apigw"
+	"github.com/NotFound1911/filestore/api/rest/apigw/v1"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	"github.com/NotFound1911/filestore/internal/web/middleware"
 	"github.com/gin-gonic/gin"
