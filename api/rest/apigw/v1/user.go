@@ -2,10 +2,10 @@ package v1
 
 import (
 	"github.com/NotFound1911/filestore/api/proto/gen/account/v1"
-	"github.com/NotFound1911/filestore/app/account/service"
 	"github.com/NotFound1911/filestore/errs"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	serv "github.com/NotFound1911/filestore/pkg/server"
+	"github.com/NotFound1911/filestore/service/account/service"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-gonic/gin"
 	"net/http"

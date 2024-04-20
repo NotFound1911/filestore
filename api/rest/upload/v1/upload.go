@@ -3,12 +3,14 @@ package v1
 import (
 	"bytes"
 	"fmt"
-	"github.com/NotFound1911/filestore/app/upload/domain"
-	"github.com/NotFound1911/filestore/app/upload/service"
+	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	serv "github.com/NotFound1911/filestore/pkg/server"
+	"github.com/NotFound1911/filestore/service/upload/domain"
+	"github.com/NotFound1911/filestore/service/upload/service"
 	"github.com/NotFound1911/filestore/util"
 	"github.com/gin-gonic/gin"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"io"
 	"log"
 	"os"
@@ -17,13 +19,15 @@ import (
 
 type Handler struct {
 	jwt.Handler
-	service service.UploadService
+	service  service.UploadService
+	fsClient file_managerv1.FileManagerServiceClient
 }
 
-func NewHandler(service service.UploadService, hdl jwt.Handler) *Handler {
+func NewHandler(service service.UploadService, hdl jwt.Handler, fsClient file_managerv1.FileManagerServiceClient) *Handler {
 	return &Handler{
-		service: service,
-		Handler: hdl,
+		service:  service,
+		Handler:  hdl,
+		fsClient: fsClient,
 	}
 }
 func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, error) {
@@ -57,9 +61,16 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 		Status:   "开始上传",
 	}
 	id, err := h.service.Upload(ctx, meta)
+	if err != nil {
+		log.Printf("Failed to upload, err:%s\n", err.Error())
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("创建文件失败:%v", err),
+		}, err
+	}
 	// 4. 将文件写入临时存储位置
 	// toto 配置文件
-	location := "./tmp" + meta.FileSha1
+	location := "./tmp/" + meta.FileSha1
 	newFile, err := os.Create(location)
 	if err != nil {
 		log.Printf("Failed to create file, err:%s\n", err.Error())
@@ -79,9 +90,47 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 	}
 	// 5. 同步或异步将文件转移到Ceph/OSS
 	// todo
-
 	// 6.  更新文件表记录
 	// todo 元数据更新
+	// 元数据更新  妙传判断
+	_, err = h.fsClient.InsertIfNotExistFileMeta(ctx.Request.Context(),
+		&file_managerv1.InsertIfNotExistFileMetaReq{
+			FileMeta: &file_managerv1.FileMeta{
+				Sha1:    meta.FileSha1,
+				Size:    meta.FileSize,
+				Address: location,
+				Type:    "upload-test",
+			},
+		})
+	if err != nil {
+		log.Printf("Failed to insert file meta, err:%s\n", err.Error())
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("创建文件元数据失败:%v", err),
+		}, err
+	}
+	// 更新用户文件列表
+	upTime := time.Now()
+	t := timestamppb.New(upTime)
+	_, err = h.fsClient.InsertUserFile(ctx.Request.Context(),
+		&file_managerv1.InsertUserFileReq{
+			UserFile: &file_managerv1.UserFile{
+				UserId:   uc.Uid,
+				FileName: head.Filename,
+				FileSha1: meta.FileSha1,
+				FileSize: meta.FileSize,
+				UpdateAt: t,
+			},
+		},
+	)
+	if err != nil {
+		log.Printf("Failed to insert user file, err:%s\n", err.Error())
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("创建用户文件失败:%v", err),
+		}, err
+	}
+	// 用户文件更新
 	err = h.service.UpdateStatus(ctx, id, "上传完毕")
 	if err != nil {
 		return serv.Result{

@@ -1,0 +1,49 @@
+syntax="proto3";
+package file_manager;
+option go_package = "file_manager/v1;file_managerv1";;
+import "google/protobuf/timestamp.proto"; // 使用timestamp类型
+service FileManagerService {
+  rpc InsertIfNotExistFileMeta(InsertIfNotExistFileMetaReq) returns (InsertIfNotExistFileMetaResp); // 插入file meta
+  rpc InsertUserFile(InsertUserFileReq) returns (InsertUserFileResp); // 插入user file
+  rpc GetFileMetaByUserId(GetFileMetaByUserIdReq) returns (GetFileMetaByUserIdResp); // 获取用户关联的file meta
+}
+// 插入file meta
+message InsertIfNotExistFileMetaReq {
+    FileMeta file_meta = 1;
+}
+
+message InsertIfNotExistFileMetaResp{
+    int64 id = 1;
+}
+
+// 插入user file
+message InsertUserFileReq{
+    UserFile user_file = 1;
+}
+
+message InsertUserFileResp{
+    int64 id = 1;
+}
+
+// 获取用户关联的file meta
+message GetFileMetaByUserIdReq{
+    int64 uid = 1;
+}
+message GetFileMetaByUserIdResp{
+    repeated FileMeta file_meta = 1;
+}
+
+message FileMeta {
+  string sha1 = 1;
+  int64 size = 2;
+  string address = 3;
+  string type = 4;
+}
+
+message UserFile{
+  int64 user_id = 1;
+  string file_name = 2;
+  string file_sha1 = 3;
+  int64 file_size = 4;
+  google.protobuf.Timestamp update_at = 5;
+}
