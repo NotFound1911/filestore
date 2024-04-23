@@ -31,7 +31,13 @@ func (f *FileManagerServiceServer) GetFileMetaByUserId(ctx context.Context, in *
 	}
 	return &file_managerv1.GetFileMetaByUserIdResp{FileMeta: res}, err
 }
-
+func (f *FileManagerServiceServer) GetFileMeta(ctx context.Context, in *file_managerv1.GetFileMetaReq) (*file_managerv1.GetFileMetaResp, error) {
+	res, err := f.svc.GetFileMeta(ctx, in.GetFileSha1())
+	meta := f.toFileMetaProto(res)
+	return &file_managerv1.GetFileMetaResp{
+		FileMeta: &meta,
+	}, err
+}
 func NewFileManagerServiceServer(svc service.FileManagerService) *FileManagerServiceServer {
 	return &FileManagerServiceServer{svc: svc}
 }

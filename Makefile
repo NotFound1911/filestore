@@ -9,7 +9,7 @@ mock:
 	# account
 	mockgen -source=./api/proto/gen/account/v1/account_grpc.pb.go -package=accountmocks -destination=./api/proto/gen/account/v1/mocks/account_grpc.mock.go
 	# file_manager
-	mockgen -source=./api/proto/gen/file_manager/v1/file_manager_grpc.pb.go -package=filemanagermocks -destination=./api/proto/gen/filemanager/v1/mocks/filemanager_grpc.mock.go
+	mockgen -source=./api/proto/gen/file_manager/v1/file_manager_grpc.pb.go -package=filemanagermocks -destination=./api/proto/gen/file_manager/v1/mocks/filemanager_grpc.mock.go
 clean:
 	rm -rf ./api/proto/gen/*
 

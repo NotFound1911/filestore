@@ -22,6 +22,7 @@ const (
 	FileManagerService_InsertIfNotExistFileMeta_FullMethodName = "/file_manager.FileManagerService/InsertIfNotExistFileMeta"
 	FileManagerService_InsertUserFile_FullMethodName           = "/file_manager.FileManagerService/InsertUserFile"
 	FileManagerService_GetFileMetaByUserId_FullMethodName      = "/file_manager.FileManagerService/GetFileMetaByUserId"
+	FileManagerService_GetFileMeta_FullMethodName              = "/file_manager.FileManagerService/GetFileMeta"
 )
 
 // FileManagerServiceClient is the client API for FileManagerService service.
@@ -31,6 +32,7 @@ type FileManagerServiceClient interface {
 	InsertIfNotExistFileMeta(ctx context.Context, in *InsertIfNotExistFileMetaReq, opts ...grpc.CallOption) (*InsertIfNotExistFileMetaResp, error)
 	InsertUserFile(ctx context.Context, in *InsertUserFileReq, opts ...grpc.CallOption) (*InsertUserFileResp, error)
 	GetFileMetaByUserId(ctx context.Context, in *GetFileMetaByUserIdReq, opts ...grpc.CallOption) (*GetFileMetaByUserIdResp, error)
+	GetFileMeta(ctx context.Context, in *GetFileMetaReq, opts ...grpc.CallOption) (*GetFileMetaResp, error)
 }
 
 type fileManagerServiceClient struct {
@@ -68,6 +70,15 @@ func (c *fileManagerServiceClient) GetFileMetaByUserId(ctx context.Context, in *
 	return out, nil
 }
 
+func (c *fileManagerServiceClient) GetFileMeta(ctx context.Context, in *GetFileMetaReq, opts ...grpc.CallOption) (*GetFileMetaResp, error) {
+	out := new(GetFileMetaResp)
+	err := c.cc.Invoke(ctx, FileManagerService_GetFileMeta_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // FileManagerServiceServer is the server API for FileManagerService service.
 // All implementations must embed UnimplementedFileManagerServiceServer
 // for forward compatibility
@@ -75,6 +86,7 @@ type FileManagerServiceServer interface {
 	InsertIfNotExistFileMeta(context.Context, *InsertIfNotExistFileMetaReq) (*InsertIfNotExistFileMetaResp, error)
 	InsertUserFile(context.Context, *InsertUserFileReq) (*InsertUserFileResp, error)
 	GetFileMetaByUserId(context.Context, *GetFileMetaByUserIdReq) (*GetFileMetaByUserIdResp, error)
+	GetFileMeta(context.Context, *GetFileMetaReq) (*GetFileMetaResp, error)
 	mustEmbedUnimplementedFileManagerServiceServer()
 }
 
@@ -90,6 +102,9 @@ func (UnimplementedFileManagerServiceServer) InsertUserFile(context.Context, *In
 }
 func (UnimplementedFileManagerServiceServer) GetFileMetaByUserId(context.Context, *GetFileMetaByUserIdReq) (*GetFileMetaByUserIdResp, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetFileMetaByUserId not implemented")
+}
+func (UnimplementedFileManagerServiceServer) GetFileMeta(context.Context, *GetFileMetaReq) (*GetFileMetaResp, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetFileMeta not implemented")
 }
 func (UnimplementedFileManagerServiceServer) mustEmbedUnimplementedFileManagerServiceServer() {}
 
@@ -158,6 +173,24 @@ func _FileManagerService_GetFileMetaByUserId_Handler(srv interface{}, ctx contex
 	return interceptor(ctx, in, info, handler)
 }
 
+func _FileManagerService_GetFileMeta_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetFileMetaReq)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(FileManagerServiceServer).GetFileMeta(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: FileManagerService_GetFileMeta_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(FileManagerServiceServer).GetFileMeta(ctx, req.(*GetFileMetaReq))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // FileManagerService_ServiceDesc is the grpc.ServiceDesc for FileManagerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -176,6 +209,10 @@ var FileManagerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetFileMetaByUserId",
 			Handler:    _FileManagerService_GetFileMetaByUserId_Handler,
+		},
+		{
+			MethodName: "GetFileMeta",
+			Handler:    _FileManagerService_GetFileMeta_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -6,6 +6,7 @@ service FileManagerService {
   rpc InsertIfNotExistFileMeta(InsertIfNotExistFileMetaReq) returns (InsertIfNotExistFileMetaResp); // 插入file meta
   rpc InsertUserFile(InsertUserFileReq) returns (InsertUserFileResp); // 插入user file
   rpc GetFileMetaByUserId(GetFileMetaByUserIdReq) returns (GetFileMetaByUserIdResp); // 获取用户关联的file meta
+  rpc GetFileMeta(GetFileMetaReq) returns (GetFileMetaResp);
 }
 // 插入file meta
 message InsertIfNotExistFileMetaReq {
@@ -46,4 +47,12 @@ message UserFile{
   string file_sha1 = 3;
   int64 file_size = 4;
   google.protobuf.Timestamp update_at = 5;
+}
+// 获取file meta
+message GetFileMetaReq{
+  string file_sha1 = 1;
+}
+
+message GetFileMetaResp{
+  FileMeta file_meta = 1;
 }

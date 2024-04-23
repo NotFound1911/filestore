@@ -30,6 +30,8 @@ func NewHandler(service service.UploadService, hdl jwt.Handler, fsClient file_ma
 		fsClient: fsClient,
 	}
 }
+
+// UploadFile 文件上传
 func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, error) {
 	// 1. 从form表单中获得文件内容句柄
 	file, head, err := ctx.Request.FormFile("file")
@@ -138,8 +140,57 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 			Msg:  fmt.Sprintf("文件状态更新失败,err:%s", err.Error()),
 		}, err
 	}
-	// 7. 更新用户文件表
-	// todo
+	return serv.Result{
+		Code: 2000,
+		Msg:  "OK",
+	}, nil
+}
+
+// Resume 秒传
+func (h *Handler) Resume(ctx *gin.Context, req ResumeReq, uc jwt.UserClaims) (serv.Result, error) {
+	// 1. 解析请求参数
+	fileSha1 := req.FileSha1
+	fileName := req.FileName
+
+	// 2. 从文件表中查询相同hash的文件记录
+	fileMeaResp, err := h.fsClient.GetFileMeta(ctx, &file_managerv1.GetFileMetaReq{
+		FileSha1: fileSha1,
+	})
+	if err != nil {
+		log.Printf("get file meta by sha1 failed,err:%v\n", err)
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("文件元数据查询失败,err:%s", err.Error()),
+		}, err
+	}
+	// 3. 查不到记录则返回秒传失败
+	if fileMeaResp.GetFileMeta().Size == 0 {
+		return serv.Result{
+			Code: -1,
+			Msg:  "无上传记录,秒传失败",
+		}, err
+	}
+	// 4. 上传过则将文件信息写入用户文件表， 返回成功
+	upTime := time.Now()
+	t := timestamppb.New(upTime)
+	_, err = h.fsClient.InsertUserFile(ctx.Request.Context(),
+		&file_managerv1.InsertUserFileReq{
+			UserFile: &file_managerv1.UserFile{
+				UserId:   uc.Uid,
+				FileName: fileName,
+				FileSha1: fileSha1,
+				FileSize: fileMeaResp.GetFileMeta().GetSize(),
+				UpdateAt: t,
+			},
+		},
+	)
+	if err != nil {
+		log.Printf("insert user file failed,err:%v\n", err)
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("用户文件上传失败,err:%s", err.Error()),
+		}, err
+	}
 	return serv.Result{
 		Code: 2000,
 		Msg:  "OK",
@@ -148,4 +199,5 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 func (h *Handler) RegisterUploadRoutes(core *gin.Engine) {
 	ug := core.Group("/api/storage/v1/upload")
 	ug.POST("/upload-file", serv.WrapClaims(h.UploadFile))
+	ug.POST("/resume", serv.WrapBodyAndClaims(h.Resume))
 }

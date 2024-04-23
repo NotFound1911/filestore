@@ -14,6 +14,7 @@ type FileManagerDao interface {
 	FindFileMetaById(ctx context.Context, id int64) (FileMetaInfo, error)
 	FindUserFileById(ctx context.Context, id int64) (UserFileInfo, error)
 	GetFileMetasByUserId(ctx context.Context, uid int64) ([]FileMetaInfo, error)
+	GetFileMeta(ctx context.Context, sha1 string) (FileMetaInfo, error)
 	GetUserIdsByFileSha1(ctx context.Context, sha1 string) ([]int64, error)
 }
 
@@ -77,7 +78,7 @@ func (o *OrmFileManager) FindUserFileById(ctx context.Context, id int64) (UserFi
 }
 func (o *OrmFileManager) GetFileMetasByUserId(ctx context.Context, uid int64) ([]FileMetaInfo, error) {
 	var fileMetas []FileMetaInfo
-	err := o.db.Joins("UserFileInfo").
+	err := o.db.WithContext(ctx).Joins("UserFileInfo").
 		Where("user_file_info.file_sha1 = file_meta_info.sha1 and user_file_info.user_id = ?", uid).
 		Find(&fileMetas).Error
 	return fileMetas, err
@@ -85,8 +86,13 @@ func (o *OrmFileManager) GetFileMetasByUserId(ctx context.Context, uid int64) ([
 func (o *OrmFileManager) GetUserIdsByFileSha1(ctx context.Context, sha1 string) ([]int64, error) {
 	var userIds []int64
 	// 查询满足条件的数据
-	err := o.db.Model(&UserFileInfo{}).
+	err := o.db.WithContext(ctx).Model(&UserFileInfo{}).
 		Where("file_sha1 = ?", "sha1").
 		Pluck("user_id", &userIds).Error
 	return userIds, err
+}
+func (o *OrmFileManager) GetFileMeta(ctx context.Context, sha1 string) (FileMetaInfo, error) {
+	var fileMeta FileMetaInfo
+	err := o.db.WithContext(ctx).Where("sha1 = ?", sha1).First(&fileMeta).Error
+	return fileMeta, err
 }

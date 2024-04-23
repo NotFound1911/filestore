@@ -11,6 +11,7 @@ type FileManagerRepository interface {
 	CreateUserFile(ctx context.Context, u domain.UserFile) (int64, error)
 	UpdateFileMeta(ctx context.Context, f domain.FileMeta) error
 	GetFileMetaByUserId(ctx context.Context, uid int64) ([]domain.FileMeta, error)
+	GetFileMeta(ctx context.Context, sha1 string) (domain.FileMeta, error)
 	GetUserIdsByFileSha1(ctx context.Context, sha1 string) ([]int64, error)
 }
 type fileManagerRepo struct {
@@ -48,7 +49,11 @@ func (repo *fileManagerRepo) GetFileMetaByUserId(ctx context.Context, uid int64)
 func (repo *fileManagerRepo) GetUserIdsByFileSha1(ctx context.Context, sha1 string) ([]int64, error) {
 	return repo.dao.GetUserIdsByFileSha1(ctx, sha1)
 }
-
+func (repo *fileManagerRepo) GetFileMeta(ctx context.Context, sha1 string) (domain.FileMeta, error) {
+	res, err := repo.dao.GetFileMeta(ctx, sha1)
+	meta := repo.toFileMetaDomain(res)
+	return meta, err
+}
 func NewFileManagerRepository(dao dao.FileManagerDao) FileManagerRepository {
 	return &fileManagerRepo{
 		dao: dao,

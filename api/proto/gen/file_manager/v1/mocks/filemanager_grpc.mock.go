@@ -36,6 +36,26 @@ func (m *MockFileManagerServiceClient) EXPECT() *MockFileManagerServiceClientMoc
 	return m.recorder
 }
 
+// GetFileMeta mocks base method.
+func (m *MockFileManagerServiceClient) GetFileMeta(ctx context.Context, in *file_managerv1.GetFileMetaReq, opts ...grpc.CallOption) (*file_managerv1.GetFileMetaResp, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{ctx, in}
+	for _, a := range opts {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "GetFileMeta", varargs...)
+	ret0, _ := ret[0].(*file_managerv1.GetFileMetaResp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFileMeta indicates an expected call of GetFileMeta.
+func (mr *MockFileManagerServiceClientMockRecorder) GetFileMeta(ctx, in interface{}, opts ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{ctx, in}, opts...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileMeta", reflect.TypeOf((*MockFileManagerServiceClient)(nil).GetFileMeta), varargs...)
+}
+
 // GetFileMetaByUserId mocks base method.
 func (m *MockFileManagerServiceClient) GetFileMetaByUserId(ctx context.Context, in *file_managerv1.GetFileMetaByUserIdReq, opts ...grpc.CallOption) (*file_managerv1.GetFileMetaByUserIdResp, error) {
 	m.ctrl.T.Helper()
@@ -117,6 +137,21 @@ func NewMockFileManagerServiceServer(ctrl *gomock.Controller) *MockFileManagerSe
 // EXPECT returns an object that allows the caller to indicate expected use.
 func (m *MockFileManagerServiceServer) EXPECT() *MockFileManagerServiceServerMockRecorder {
 	return m.recorder
+}
+
+// GetFileMeta mocks base method.
+func (m *MockFileManagerServiceServer) GetFileMeta(arg0 context.Context, arg1 *file_managerv1.GetFileMetaReq) (*file_managerv1.GetFileMetaResp, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetFileMeta", arg0, arg1)
+	ret0, _ := ret[0].(*file_managerv1.GetFileMetaResp)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetFileMeta indicates an expected call of GetFileMeta.
+func (mr *MockFileManagerServiceServerMockRecorder) GetFileMeta(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetFileMeta", reflect.TypeOf((*MockFileManagerServiceServer)(nil).GetFileMeta), arg0, arg1)
 }
 
 // GetFileMetaByUserId mocks base method.
