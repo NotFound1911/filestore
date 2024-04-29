@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"github.com/NotFound1911/filestore/service/upload/domain"
+	"github.com/NotFound1911/filestore/service/upload/repository/cache"
 	"github.com/NotFound1911/filestore/service/upload/repository/dao"
 	"time"
 )
@@ -12,11 +13,33 @@ type UploadRepository interface {
 	UpdateStatus(ctx context.Context, u domain.Upload) error
 	FindUploadById(ctx context.Context, id int64) (domain.Upload, error)
 	GetUploadInfosByUId(ctx context.Context, uid int64) ([]domain.Upload, error)
+
+	SetFileChunk(ctx context.Context, c domain.Chunk) error
+	GetFileChunk(ctx context.Context, uploadId int64, id int64) (domain.Chunk, error)
+	DelFileChunk(ctx context.Context, uploadId int64, id int64) error
+	GetChunks(ctx context.Context, uploadId int64) ([]domain.Chunk, error)
 }
 
 type uploadRepo struct {
-	dao dao.UploadDao
-	// cache
+	dao   dao.UploadDao
+	cache cache.ChunkCache
+	// logFunc func(format string, a ...any)
+}
+
+func (repo *uploadRepo) SetFileChunk(ctx context.Context, c domain.Chunk) error {
+	return repo.cache.Set(ctx, c)
+}
+
+func (repo *uploadRepo) GetChunks(ctx context.Context, uploadId int64) ([]domain.Chunk, error) {
+	return repo.cache.GetChunks(ctx, uploadId)
+}
+
+func (repo *uploadRepo) GetFileChunk(ctx context.Context, uploadId int64, id int64) (domain.Chunk, error) {
+	return repo.cache.Get(ctx, uploadId, id)
+}
+
+func (repo *uploadRepo) DelFileChunk(ctx context.Context, uploadId int64, id int64) error {
+	return repo.cache.Del(ctx, uploadId, id)
 }
 
 func (repo *uploadRepo) Create(ctx context.Context, u domain.Upload) (int64, error) {
@@ -50,9 +73,10 @@ func (repo *uploadRepo) GetUploadInfosByUId(ctx context.Context, uid int64) ([]d
 	return res, nil
 }
 
-func NewUploadRepository(dao dao.UploadDao) UploadRepository {
+func NewUploadRepository(dao dao.UploadDao, chunkCache cache.ChunkCache) UploadRepository {
 	return &uploadRepo{
-		dao: dao,
+		dao:   dao,
+		cache: chunkCache,
 	}
 }
 func (repo *uploadRepo) toDomain(u dao.UploadInfo) domain.Upload {
@@ -65,6 +89,7 @@ func (repo *uploadRepo) toDomain(u dao.UploadInfo) domain.Upload {
 		CreateAt: u.CTime,
 		UpdateAt: u.UTime,
 		Status:   u.Status,
+		Type:     u.Type,
 	}
 }
 
@@ -78,5 +103,6 @@ func (repo *uploadRepo) toEntity(u domain.Upload) dao.UploadInfo {
 		CTime:    u.CreateAt,
 		UTime:    u.UpdateAt,
 		Status:   u.Status,
+		Type:     u.Type,
 	}
 }

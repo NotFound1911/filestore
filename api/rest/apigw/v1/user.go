@@ -117,7 +117,7 @@ func (u *UserHandler) LogoutJWT(ctx *gin.Context) {
 }
 func (u *UserHandler) Profile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, error) {
 	user, err := u.client.Profile(ctx, &accountv1.ProfileReq{
-		Id: uc.Uid,
+		Id: uc.UId,
 	})
 	if err != nil {
 		return serv.Result{

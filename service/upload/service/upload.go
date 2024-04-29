@@ -11,10 +11,30 @@ type UploadService interface {
 	UpdateStatus(ctx context.Context, id int64, status string) error
 	FindUploadById(ctx context.Context, id int64) (domain.Upload, error)
 	GetUploadInfosByUId(ctx context.Context, uid int64) ([]domain.Upload, error)
-	// todo 妙传 分片
+
+	SetFileChunk(ctx context.Context, c domain.Chunk) error
+	GetFileChunk(ctx context.Context, uploadId int64, id int64) (domain.Chunk, error)
+	DelFileChunk(ctx context.Context, uploadId int64, id int64) error
+	GetChunks(ctx context.Context, uploadId int64) ([]domain.Chunk, error)
 }
 type uploadService struct {
 	repo repository.UploadRepository
+}
+
+func (s *uploadService) GetChunks(ctx context.Context, uploadId int64) ([]domain.Chunk, error) {
+	return s.repo.GetChunks(ctx, uploadId)
+}
+
+func (s *uploadService) SetFileChunk(ctx context.Context, c domain.Chunk) error {
+	return s.repo.SetFileChunk(ctx, c)
+}
+
+func (s *uploadService) GetFileChunk(ctx context.Context, uploadId int64, id int64) (domain.Chunk, error) {
+	return s.repo.GetFileChunk(ctx, uploadId, id)
+}
+
+func (s *uploadService) DelFileChunk(ctx context.Context, uploadId int64, id int64) error {
+	return s.repo.DelFileChunk(ctx, uploadId, id)
 }
 
 func (s *uploadService) Upload(ctx context.Context, u domain.Upload) (int64, error) {

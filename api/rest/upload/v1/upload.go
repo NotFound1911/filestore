@@ -14,6 +14,8 @@ import (
 	"io"
 	"log"
 	"os"
+	"path"
+	"strconv"
 	"time"
 )
 
@@ -56,11 +58,13 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 	now := time.Now()
 	// todo 构造元数据
 	meta := domain.Upload{
+		UId:      uc.UId,
 		FileName: head.Filename,
 		FileSha1: util.Sha1(buf.Bytes()),
 		FileSize: int64(len(buf.Bytes())),
 		CreateAt: &now,
-		Status:   "开始上传",
+		Status:   domain.UploadStatusStart,
+		Type:     domain.UploadTypeSingle,
 	}
 	id, err := h.service.Upload(ctx, meta)
 	if err != nil {
@@ -101,7 +105,7 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 				Sha1:    meta.FileSha1,
 				Size:    meta.FileSize,
 				Address: location,
-				Type:    "upload-test",
+				Type:    domain.UploadTypeSingle,
 			},
 		})
 	if err != nil {
@@ -117,7 +121,7 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 	_, err = h.fsClient.InsertUserFile(ctx.Request.Context(),
 		&file_managerv1.InsertUserFileReq{
 			UserFile: &file_managerv1.UserFile{
-				UserId:   uc.Uid,
+				UserId:   uc.UId,
 				FileName: head.Filename,
 				FileSha1: meta.FileSha1,
 				FileSize: meta.FileSize,
@@ -133,7 +137,7 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 		}, err
 	}
 	// 用户文件更新
-	err = h.service.UpdateStatus(ctx, id, "上传完毕")
+	err = h.service.UpdateStatus(ctx, id, domain.UploadStatusFinished)
 	if err != nil {
 		return serv.Result{
 			Code: -1,
@@ -176,7 +180,7 @@ func (h *Handler) Resume(ctx *gin.Context, req ResumeReq, uc jwt.UserClaims) (se
 	_, err = h.fsClient.InsertUserFile(ctx.Request.Context(),
 		&file_managerv1.InsertUserFileReq{
 			UserFile: &file_managerv1.UserFile{
-				UserId:   uc.Uid,
+				UserId:   uc.UId,
 				FileName: fileName,
 				FileSha1: fileSha1,
 				FileSize: fileMeaResp.GetFileMeta().GetSize(),
@@ -196,8 +200,224 @@ func (h *Handler) Resume(ctx *gin.Context, req ResumeReq, uc jwt.UserClaims) (se
 		Msg:  "OK",
 	}, nil
 }
+
+// todo 初始化分块上传
+func (h *Handler) InitMultiUploadFile(ctx *gin.Context, req InitMultiUploadFileReq, uc jwt.UserClaims) (serv.Result, error) {
+	// 初始化分块上传的初始化信息
+	now := time.Now()
+	uploadInfo := domain.Upload{
+		UId:      uc.UId,
+		FileName: req.FileName,
+		FileSha1: req.FileSha1,
+		FileSize: req.FileSize,
+		CreateAt: &now,
+		Status:   domain.UploadStatusStart,
+		Type:     domain.UploadTypeMulti,
+	}
+	id, err := h.service.Upload(ctx, uploadInfo)
+	if err != nil {
+		log.Printf("Failed to upload, err:%s\n", err.Error())
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("创建文件失败:%v", err),
+		}, err
+	}
+	uploadInfo.Id = id
+	return serv.Result{
+		Code: 2000,
+		Msg:  "OK",
+		Data: uploadInfo,
+	}, nil
+}
+
+// MultiUploadFilePart 分块传输
+func (h *Handler) MultiUploadFilePart(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, error) {
+	chunkIdStr := ctx.Query("chunk_id")
+	chunkId, err := strconv.ParseInt(chunkIdStr, 10, 64)
+	if err != nil {
+		fmt.Println("Error converting string to int:", err)
+		return serv.Result{
+			Code: -1,
+			Msg:  "chunk id 错误",
+		}, err
+	}
+	uploadIdStr := ctx.Query("upload_id")
+	uploadId, err := strconv.ParseInt(uploadIdStr, 10, 64)
+	if err != nil {
+		fmt.Println("Error converting string to int64:", err)
+		return serv.Result{
+			Code: -1,
+			Msg:  "upload id 错误",
+		}, err
+	}
+	fileName := ctx.Query("file_name")
+	chunkSha1 := ctx.Query("chunk_sha1")
+	chunkSizeStr := ctx.Query("chunk_size")
+	chunkSize, err := strconv.ParseInt(chunkSizeStr, 10, 64)
+	if err != nil {
+		fmt.Println("Error converting string to int64:", err)
+		return serv.Result{
+			Code: -1,
+			Msg:  "upload id 错误",
+		}, err
+	}
+	countStr := ctx.Query("count")
+	count, err := strconv.ParseInt(countStr, 10, 64)
+	if err != nil {
+		fmt.Println("Error converting string to int:", err)
+		return serv.Result{
+			Code: -1,
+			Msg:  "count 错误",
+		}, err
+	}
+
+	// todo 配置
+	fPath := fmt.Sprintf("./tmp/%d/%d", uploadId, chunkId)
+	os.MkdirAll(path.Dir(fPath), 0744)
+	fd, err := os.Create(fPath)
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("文件创建失败:%v", err),
+		}, err
+	}
+	defer fd.Close()
+	now := time.Now()
+	chunk := domain.Chunk{
+		Id:       chunkId,
+		UploadId: uploadId,
+		UId:      uc.UId,
+		FileName: fileName,
+		Sha1:     chunkSha1,
+		Size:     chunkSize,
+		CreateAt: &now,
+		UpdateAt: &now,
+		Status:   domain.UploadStatusStart,
+		Count:    count,
+	}
+	if err := h.service.SetFileChunk(ctx, chunk); err != nil {
+		log.Printf("set file chunk failed,err:%v", err)
+	}
+	buf := make([]byte, 1024*1024)
+	for {
+		n, err := ctx.Request.Body.Read(buf)
+		fd.Write(buf[:n])
+		if err != nil {
+			break
+		}
+	}
+	// 更新redis缓存状态
+	now = time.Now()
+	chunk.UpdateAt = &now
+	chunk.Status = domain.UploadStatusFinished
+	if err := h.service.SetFileChunk(ctx, chunk); err != nil {
+		log.Printf("set file chunk failed,err:%v", err)
+	}
+	return serv.Result{
+		Code: 2000,
+		Msg:  "OK",
+	}, nil
+}
+
+// MultiUploadFileMerge 通知分块上传完成，合并
+func (h *Handler) MultiUploadFileMerge(ctx *gin.Context, req MultiUploadFileMergeReq, uc jwt.UserClaims) (serv.Result, error) {
+	cs, err := h.service.GetChunks(ctx, req.UploadId)
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("获取文件分片信息失败:%v", err),
+		}, err
+	}
+	// 校验数量
+	cnt := cs[0].Count
+	if cnt != int64(len(cs)) {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("分片信息不完整，期望:%d,实际:%d", cnt, len(cs)),
+		}, nil
+	}
+	// 校验状态
+	for i := 0; int64(i) < cnt; i++ {
+		if cs[i].Status != domain.UploadStatusFinished {
+			return serv.Result{
+				Code: -1,
+				Msg:  "切片状态未完成",
+			}, nil
+		}
+	}
+	// TODO：合并分块, 可以将ceph当临时存储，合并时将文件写入ceph;
+	// 也可以不用在本地进行合并，转移的时候将分块append到ceph/oss即可
+	srcPath := fmt.Sprintf("./tmp/%d/", req.UploadId)
+	destPath := fmt.Sprintf("%s", req.FileSha1)
+	cmd := fmt.Sprintf("cd %s && ls | sort -n | xargs cat > %s", srcPath, destPath)
+	_, err = util.ExecLinuxShell(cmd)
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("文件合并失败:%v", err),
+		}, err
+	}
+	// 将源文件移动到目标路径
+	err = os.Rename(fmt.Sprintf("%s%s", srcPath, destPath), fmt.Sprintf("./tmp/%s", destPath))
+	if err != nil {
+		fmt.Println("Error moving file:", err)
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("文件移动失败:%v", err),
+		}, err
+	}
+
+	// 更新唯一文件表及用户文件表
+	err = h.service.UpdateStatus(ctx, req.UploadId, domain.UploadStatusFinished)
+	if err != nil {
+		log.Printf("文件任务列表更新失败:%v\n", err)
+	}
+	_, err = h.fsClient.InsertIfNotExistFileMeta(ctx.Request.Context(),
+		&file_managerv1.InsertIfNotExistFileMetaReq{
+			FileMeta: &file_managerv1.FileMeta{
+				Sha1:    req.FileSha1,
+				Size:    req.FileSize,
+				Address: fmt.Sprintf("./tmp/%s", destPath),
+				Type:    domain.UploadTypeSingle,
+			},
+		})
+	if err != nil {
+		log.Printf("Failed to insert file meta, err:%s\n", err.Error())
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("创建文件元数据失败:%v", err),
+		}, err
+	}
+	upTime := time.Now()
+	t := timestamppb.New(upTime)
+	_, err = h.fsClient.InsertUserFile(ctx.Request.Context(),
+		&file_managerv1.InsertUserFileReq{
+			UserFile: &file_managerv1.UserFile{
+				UserId:   uc.UId,
+				FileName: req.FileName,
+				FileSha1: req.FileSha1,
+				FileSize: req.FileSize,
+				UpdateAt: t,
+			},
+		},
+	)
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("用户文件列表更新失败:%v", err),
+		}, err
+	}
+	return serv.Result{
+		Code: 2000,
+		Msg:  "OK",
+	}, nil
+}
+
 func (h *Handler) RegisterUploadRoutes(core *gin.Engine) {
 	ug := core.Group("/api/storage/v1/upload")
 	ug.POST("/upload-file", serv.WrapClaims(h.UploadFile))
 	ug.POST("/resume", serv.WrapBodyAndClaims(h.Resume))
+	ug.POST("/init-multi-upload-file", serv.WrapBodyAndClaims(h.InitMultiUploadFile))
+	ug.POST("/multi-upload-file-part", serv.WrapClaims(h.MultiUploadFilePart))
+	ug.POST("/multi-upload-file-merge", serv.WrapBodyAndClaims(h.MultiUploadFileMerge))
 }

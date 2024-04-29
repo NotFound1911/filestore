@@ -4,10 +4,10 @@ import (
 	"crypto/md5"
 	"crypto/sha1"
 	"encoding/hex"
+	"fmt"
 	"hash"
 	"io"
 	"os"
-	"path/filepath"
 )
 
 type Sha1Stream struct {
@@ -30,7 +30,14 @@ func Sha1(data []byte) string {
 	_sha1.Write(data)
 	return hex.EncodeToString(_sha1.Sum([]byte("")))
 }
-
+func GetFileSha1(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return "", err
+	}
+	return FileSha1(file), nil
+}
 func FileSha1(file *os.File) string {
 	_sha1 := sha1.New()
 	io.Copy(_sha1, file)
@@ -60,11 +67,23 @@ func PathExists(path string) (bool, error) {
 	return false, err
 }
 
-func GetFileSize(filename string) int64 {
-	var result int64
-	filepath.Walk(filename, func(path string, f os.FileInfo, err error) error {
-		result = f.Size()
-		return nil
-	})
-	return result
+func GetFileSize(filename string) (int64, error) {
+	// 打开文件
+	file, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return -1, err
+	}
+	defer file.Close()
+
+	// 获取文件信息
+	fileInfo, err := file.Stat()
+	if err != nil {
+		fmt.Println("Error getting file info:", err)
+		return -1, err
+	}
+
+	// 获取文件大小
+	fileSize := fileInfo.Size()
+	return fileSize, nil
 }

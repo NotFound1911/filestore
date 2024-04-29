@@ -56,7 +56,7 @@ func (r *RedisJWTHandler) SetLoginToken(ctx *gin.Context, uid int64) error {
 
 func (r *RedisJWTHandler) SetJWTToken(ctx *gin.Context, uid int64, ssid string) error {
 	uc := UserClaims{
-		Uid:       uid,
+		UId:       uid,
 		Ssid:      ssid,
 		UserAgent: ctx.Request.Header.Get("User-Agent"),
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -118,7 +118,7 @@ type RefreshClaims struct {
 }
 type UserClaims struct {
 	jwt.RegisteredClaims
-	Uid       int64
+	UId       int64
 	Ssid      string
 	UserAgent string
 }

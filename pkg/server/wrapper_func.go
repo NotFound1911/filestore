@@ -11,7 +11,9 @@ import (
 	"net/http"
 )
 
-func WrapBody[Req any](bizFn func(ctx *gin.Context, req Req) (Result, error)) gin.HandlerFunc {
+func WrapBody[Req any](
+	bizFn func(ctx *gin.Context, req Req) (Result, error),
+) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		var req Req
 		r := ctx.Request
@@ -41,7 +43,7 @@ func WrapClaims[Claims any](
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, Result{
 				Code: -1,
-				Msg:  "认证失败",
+				Msg:  "认证失败,无效用户",
 			})
 			return
 		}
@@ -49,7 +51,7 @@ func WrapClaims[Claims any](
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, Result{
 				Code: -1,
-				Msg:  "认证失败",
+				Msg:  "认证失败,无效用户",
 			})
 			return
 		}

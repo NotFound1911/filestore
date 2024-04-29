@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"fmt"
 	jwt2 "github.com/NotFound1911/filestore/internal/web/jwt"
 	"github.com/NotFound1911/filestore/pkg/server"
 	"github.com/gin-gonic/gin"
@@ -33,9 +34,10 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 		})
 		if err != nil {
 			// token 不对，token 是伪造的
+			fmt.Println("err:", err)
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, server.Result{
 				Code: -1,
-				Msg:  "认证失败",
+				Msg:  "认证失败,伪造token",
 			})
 			return
 		}
@@ -44,7 +46,7 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			// token 解析出来了，但是 token 可能是非法的，或者过期了的
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, server.Result{
 				Code: -1,
-				Msg:  "认证失败",
+				Msg:  "认证失败,非法或过期token",
 			})
 			return
 		}
@@ -54,7 +56,7 @@ func (m *LoginJWTMiddlewareBuilder) CheckLogin() gin.HandlerFunc {
 			// token 无效或者 redis 有问题
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, server.Result{
 				Code: -1,
-				Msg:  "认证失败",
+				Msg:  "认证失败,无效token",
 			})
 			return
 		}
