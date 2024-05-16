@@ -1,4 +1,4 @@
-package mdi
+package di
 
 const (
 	TopicName         = "filestore"
