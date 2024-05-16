@@ -4,6 +4,8 @@ import (
 	"context"
 	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
 	"github.com/NotFound1911/filestore/api/rest/upload/v1"
+	"github.com/NotFound1911/filestore/internal/mq"
+	"github.com/NotFound1911/filestore/internal/storage"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	"github.com/NotFound1911/filestore/internal/web/middleware"
 	"github.com/NotFound1911/filestore/service/upload/ioc"
@@ -53,7 +55,7 @@ func Run() {
 	)
 	defer cc.Close()
 	client := file_managerv1.NewFileManagerServiceClient(cc)
-	uploadHandler := v1.NewHandler(uploadService, hdl, client)
+	uploadHandler := v1.NewHandler(uploadService, hdl, client, storage.New(), mq.New())
 	uploadHandler.RegisterUploadRoutes(server)
 
 	server.Run(":8889")

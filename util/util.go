@@ -36,6 +36,9 @@ func GetFileSha1(path string) (string, error) {
 		fmt.Println("Error opening file:", err)
 		return "", err
 	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
 	return FileSha1(file), nil
 }
 func FileSha1(file *os.File) string {
@@ -54,6 +57,17 @@ func FileMD5(file *os.File) string {
 	_md5 := md5.New()
 	io.Copy(_md5, file)
 	return hex.EncodeToString(_md5.Sum(nil))
+}
+func GetFileMd5(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		fmt.Println("Error opening file:", err)
+		return "", err
+	}
+	defer func(file *os.File) {
+		_ = file.Close()
+	}(file)
+	return FileMD5(file), nil
 }
 
 func PathExists(path string) (bool, error) {

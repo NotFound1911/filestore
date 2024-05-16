@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
+	mdi "github.com/NotFound1911/filestore/internal/mq/di"
+	sdi "github.com/NotFound1911/filestore/internal/storage/di"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	serv "github.com/NotFound1911/filestore/pkg/server"
 	"github.com/NotFound1911/filestore/service/upload/domain"
@@ -21,16 +23,28 @@ import (
 
 type Handler struct {
 	jwt.Handler
-	service  service.UploadService
-	fsClient file_managerv1.FileManagerServiceClient
+	service      service.UploadService
+	fsClient     file_managerv1.FileManagerServiceClient
+	storage      sdi.CustomStorage
+	messageQueue mdi.MessageQueue
 }
 
-func NewHandler(service service.UploadService, hdl jwt.Handler, fsClient file_managerv1.FileManagerServiceClient) *Handler {
-	return &Handler{
-		service:  service,
-		Handler:  hdl,
-		fsClient: fsClient,
+type HandlerOption func(handler *Handler)
+
+func NewHandler(service service.UploadService, hdl jwt.Handler,
+	fsClient file_managerv1.FileManagerServiceClient,
+	storage sdi.CustomStorage, messageQueue mdi.MessageQueue, opts ...HandlerOption) *Handler {
+	handler := &Handler{
+		service:      service,
+		Handler:      hdl,
+		fsClient:     fsClient,
+		storage:      storage,
+		messageQueue: messageQueue,
 	}
+	for _, opt := range opts {
+		opt(handler)
+	}
+	return handler
 }
 
 // UploadFile 文件上传
@@ -57,7 +71,7 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 	// 3. 构建文件元信息
 	now := time.Now()
 	// todo 构造元数据
-	meta := domain.Upload{
+	upInfo := domain.Upload{
 		UId:      uc.UId,
 		FileName: head.Filename,
 		FileSha1: util.Sha1(buf.Bytes()),
@@ -66,7 +80,7 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 		Status:   domain.UploadStatusStart,
 		Type:     domain.UploadTypeSingle,
 	}
-	id, err := h.service.Upload(ctx, meta)
+	id, err := h.service.Upload(ctx, upInfo)
 	if err != nil {
 		log.Printf("Failed to upload, err:%s\n", err.Error())
 		return serv.Result{
@@ -76,7 +90,7 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 	}
 	// 4. 将文件写入临时存储位置
 	// toto 配置文件
-	location := "./tmp/" + meta.FileSha1
+	location := "./tmp/" + upInfo.FileSha1 + "." + head.Filename
 	newFile, err := os.Create(location)
 	if err != nil {
 		log.Printf("Failed to create file, err:%s\n", err.Error())
@@ -87,29 +101,69 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 	}
 	defer newFile.Close()
 	nByte, err := newFile.Write(buf.Bytes())
-	if int64(nByte) != meta.FileSize || err != nil {
+	if int64(nByte) != upInfo.FileSize || err != nil {
 		log.Printf("Failed to save data into file, writtenSize:%d, err:%s\n", nByte, err.Error())
 		return serv.Result{
 			Code: -1,
 			Msg:  fmt.Sprintf("文件写入失败,需要字节数:%d,err:%s", nByte, err.Error()),
 		}, err
 	}
-	// 5. 同步或异步将文件转移到Ceph/OSS
+	// 5. 同步或异步将文件转移到自定义对象存储
+	sync := false //todo config
+	storageMetaInfo, err := sdi.GetMetaInfo(location, upInfo.FileSha1)
+	if err != nil {
+		log.Printf("Failed to get storage meta info,err:%s\n", err.Error())
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("获取文件存储元数据失败, err:%s", err.Error()),
+		}, err
+	}
+	if sync { // todo 同步写入  transfer服务
+		h.storage.PutObject(storageMetaInfo.Bucket, storageMetaInfo.StorageName, location, "")
+	} else {
+		// 消息队列 异步写入
+		msg := mdi.Message{
+			Topic: mdi.TopicName,
+			Value: nil,
+			Headers: []mdi.Header{
+				{
+					Key:   mdi.HeaderBucket,
+					Value: storageMetaInfo.Bucket,
+				},
+				{
+					Key:   mdi.HeaderStorageName,
+					Value: storageMetaInfo.StorageName,
+				},
+				{
+					Key:   mdi.HeaderLocation,
+					Value: location,
+				},
+			},
+		}
+		err := h.messageQueue.SendMessage(&msg)
+		if err != nil {
+			return serv.Result{
+				Code: -1,
+				Msg:  fmt.Sprintf("消息队列发送失败, err:%s", err.Error()),
+			}, err
+		}
+	}
 	// todo
 	// 6.  更新文件表记录
-	// todo 元数据更新
-	// 元数据更新  妙传判断
+	// 元数据更新  秒传判断
 	_, err = h.fsClient.InsertIfNotExistFileMeta(ctx.Request.Context(),
 		&file_managerv1.InsertIfNotExistFileMetaReq{
 			FileMeta: &file_managerv1.FileMeta{
-				Sha1:    meta.FileSha1,
-				Size:    meta.FileSize,
-				Address: location,
-				Type:    domain.UploadTypeSingle,
+				Sha1:        upInfo.FileSha1,
+				Size:        upInfo.FileSize,
+				Address:     location,
+				Type:        domain.UploadTypeSingle,
+				Bucket:      storageMetaInfo.Bucket,
+				StorageName: storageMetaInfo.StorageName,
 			},
 		})
 	if err != nil {
-		log.Printf("Failed to insert file meta, err:%s\n", err.Error())
+		log.Printf("Failed to insert file upInfo, err:%s\n", err.Error())
 		return serv.Result{
 			Code: -1,
 			Msg:  fmt.Sprintf("创建文件元数据失败:%v", err),
@@ -123,8 +177,8 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 			UserFile: &file_managerv1.UserFile{
 				UserId:   uc.UId,
 				FileName: head.Filename,
-				FileSha1: meta.FileSha1,
-				FileSize: meta.FileSize,
+				FileSha1: upInfo.FileSha1,
+				FileSize: upInfo.FileSize,
 				UpdateAt: t,
 			},
 		},
@@ -201,7 +255,7 @@ func (h *Handler) Resume(ctx *gin.Context, req ResumeReq, uc jwt.UserClaims) (se
 	}, nil
 }
 
-// todo 初始化分块上传
+// InitMultiUploadFile 初始化分块上传
 func (h *Handler) InitMultiUploadFile(ctx *gin.Context, req InitMultiUploadFileReq, uc jwt.UserClaims) (serv.Result, error) {
 	// 初始化分块上传的初始化信息
 	now := time.Now()
@@ -298,13 +352,39 @@ func (h *Handler) MultiUploadFilePart(ctx *gin.Context, uc jwt.UserClaims) (serv
 	if err := h.service.SetFileChunk(ctx, chunk); err != nil {
 		log.Printf("set file chunk failed,err:%v", err)
 	}
-	buf := make([]byte, 1024*1024)
-	for {
-		n, err := ctx.Request.Body.Read(buf)
-		fd.Write(buf[:n])
-		if err != nil {
-			break
-		}
+	file, err := ctx.FormFile("file")
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("获取文件失败:%v", err),
+		}, err
+	}
+	src, err := file.Open()
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("文件打开失败:%v", err),
+		}, err
+	}
+	if _, err := io.Copy(fd, src); err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("文件存储失败:%v", err),
+		}, err
+	}
+	// check sha1
+	sha1, err := util.GetFileSha1(fPath)
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("%s生成md5 失败,err:%v", fPath, err),
+		}, err
+	}
+	if sha1 != chunkSha1 {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("sha1 错误,期望：%s,实际:%s", chunkSha1, sha1),
+		}, nil
 	}
 	// 更新redis缓存状态
 	now = time.Now()
@@ -348,25 +428,74 @@ func (h *Handler) MultiUploadFileMerge(ctx *gin.Context, req MultiUploadFileMerg
 	// TODO：合并分块, 可以将ceph当临时存储，合并时将文件写入ceph;
 	// 也可以不用在本地进行合并，转移的时候将分块append到ceph/oss即可
 	srcPath := fmt.Sprintf("./tmp/%d/", req.UploadId)
-	destPath := fmt.Sprintf("%s", req.FileSha1)
-	cmd := fmt.Sprintf("cd %s && ls | sort -n | xargs cat > %s", srcPath, destPath)
-	_, err = util.ExecLinuxShell(cmd)
+	filePaths, err := util.GetAllFilesInDirectory(srcPath)
 	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("获取文件列表失败，err:%v", err),
+		}, err
+	}
+	location := fmt.Sprintf("./tmp/%s.%s", req.FileSha1, req.FileName) // todo 文件bucket
+	if err = util.Merge(filePaths, location); err != nil {
 		return serv.Result{
 			Code: -1,
 			Msg:  fmt.Sprintf("文件合并失败:%v", err),
 		}, err
 	}
-	// 将源文件移动到目标路径
-	err = os.Rename(fmt.Sprintf("%s%s", srcPath, destPath), fmt.Sprintf("./tmp/%s", destPath))
+	// sha1 校验
+	sha1, err := util.GetFileSha1(location)
 	if err != nil {
-		fmt.Println("Error moving file:", err)
 		return serv.Result{
 			Code: -1,
-			Msg:  fmt.Sprintf("文件移动失败:%v", err),
+			Msg:  fmt.Sprintf("文件sha1获取失败:%v", err),
 		}, err
 	}
-
+	if sha1 != req.FileSha1 {
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("文件sha1校验失败，期望:%s，实际:%s", req.FileSha1, sha1),
+		}, nil
+	}
+	// 5. 同步或异步将文件转移到自定义对象存储
+	sync := false //todo config
+	storageMetaInfo, err := sdi.GetMetaInfo(location, req.FileSha1)
+	if err != nil {
+		log.Printf("Failed to get storage meta info,err:%s\n", err.Error())
+		return serv.Result{
+			Code: -1,
+			Msg:  fmt.Sprintf("获取文件存储元数据失败, err:%s", err.Error()),
+		}, err
+	}
+	if sync { // todo 同步写入  transfer服务
+		h.storage.PutObject(storageMetaInfo.Bucket, storageMetaInfo.StorageName, location, "")
+	} else {
+		// 消息队列 异步写入
+		msg := mdi.Message{
+			Topic: mdi.TopicName,
+			Value: nil,
+			Headers: []mdi.Header{
+				{
+					Key:   mdi.HeaderBucket,
+					Value: storageMetaInfo.Bucket,
+				},
+				{
+					Key:   mdi.HeaderStorageName,
+					Value: storageMetaInfo.StorageName,
+				},
+				{
+					Key:   mdi.HeaderLocation,
+					Value: location,
+				},
+			},
+		}
+		err := h.messageQueue.SendMessage(&msg)
+		if err != nil {
+			return serv.Result{
+				Code: -1,
+				Msg:  fmt.Sprintf("消息队列发送失败, err:%s", err.Error()),
+			}, err
+		}
+	}
 	// 更新唯一文件表及用户文件表
 	err = h.service.UpdateStatus(ctx, req.UploadId, domain.UploadStatusFinished)
 	if err != nil {
@@ -377,7 +506,7 @@ func (h *Handler) MultiUploadFileMerge(ctx *gin.Context, req MultiUploadFileMerg
 			FileMeta: &file_managerv1.FileMeta{
 				Sha1:    req.FileSha1,
 				Size:    req.FileSize,
-				Address: fmt.Sprintf("./tmp/%s", destPath),
+				Address: location, // todo 维护
 				Type:    domain.UploadTypeSingle,
 			},
 		})

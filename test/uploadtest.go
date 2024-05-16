@@ -9,6 +9,7 @@ import (
 	account "github.com/NotFound1911/filestore/service/account/run"
 	apigw "github.com/NotFound1911/filestore/service/apigw/run"
 	file_manager "github.com/NotFound1911/filestore/service/file_manager/run"
+	transfer "github.com/NotFound1911/filestore/service/transfer/run"
 	upload "github.com/NotFound1911/filestore/service/upload/run"
 	"github.com/NotFound1911/filestore/util"
 	"io"
@@ -43,6 +44,7 @@ func main() {
 	}
 	startMultiUploadFile(file, token, id)
 	reqMultiUploadFileMerge(file, token, id)
+	select {}
 }
 
 // 服务初始化
@@ -51,6 +53,8 @@ func initServ() {
 	go apigw.Run()
 	go account.Run()
 	go file_manager.Run()
+	go transfer.Run()
+	time.Sleep(time.Second * 5)
 }
 
 type user struct {
@@ -236,6 +240,7 @@ func startMultiUploadFile(filePath, token string, uploadId int64) error {
 	if err != nil {
 		return err
 	}
+	//chunkSize := 1024.0
 	chunkSize := 1024.0 * 1024
 	currentChunk := int64(1)
 	totalChunk := int64(math.Ceil(float64(fileSize) / chunkSize))

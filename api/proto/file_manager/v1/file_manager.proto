@@ -39,6 +39,8 @@ message FileMeta {
   int64 size = 2;
   string address = 3;
   string type = 4;
+  string bucket = 5;
+  string storage_name = 6;
 }
 
 message UserFile{
