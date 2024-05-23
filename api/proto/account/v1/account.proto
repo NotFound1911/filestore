@@ -1,0 +1,53 @@
+syntax="proto3";
+package accounts;
+option go_package = "account/v1;accountv1";;
+import "google/protobuf/timestamp.proto"; // 使用timestamp类型
+service AccountService {
+  rpc Login(LoginReq) returns (LoginResp); // 登录
+  rpc Signup(SignupReq) returns (SignupResp); // 注册
+  rpc Profile (ProfileReq) returns (ProfileResp); // 描述
+}
+// 登录
+message LoginReq {
+  string email = 1;
+  string password = 2;
+}
+
+message LoginResp {
+  int64 id = 1;
+}
+
+// 注册
+message SignupReq{
+  User user = 1;
+}
+message SignupResp {
+}
+
+// 登出
+message LogoutReq{
+  string email = 1;
+}
+message LogoutResp{
+  int64 code = 1;
+  string msg = 2;
+}
+
+// 描述
+message ProfileReq {
+  int64 id = 1;
+}
+
+message ProfileResp {
+  User user = 1;
+}
+message User {
+  int64 id = 1;
+  string email = 2;
+  string name = 3;
+  string password = 4;
+  string phone = 5;
+  string status = 6;
+  google.protobuf.Timestamp create_at = 7;
+  google.protobuf.Timestamp update_at = 8;
+}

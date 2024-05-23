@@ -1,0 +1,23 @@
+log:
+  level: debug          # 日志等级
+  dir: ./tmp/log        # 日志路径
+  max_backups: 3        # 旧文件的最大个数
+  max_size: 10          # 日志文件最大大小（MB）
+  max_age: 5            # 旧文件的最大保留天数
+  format: json          # 写入格式 可选json
+  show_line: true       # 是否显示调用行
+  compress: true        # 是否压缩
+  enable_file: false    # 是否启用日志文件
+mq:
+  addr:
+    - localhost:9094              # 地址
+  net_dia_timeout: 30             # 连接超时 s
+  net_read_timeout: 30            # 读超时 s
+  p_required_acks: 1              # 生产者 期望 broker 的响应模式
+  p_timeout: 30                   # 发送消息的最大超时时间 s
+  p_return_success: true          # 是否返回成功信息
+  p_return_err: true              # 是否返回错误信息
+  c_max_wait_time: 250            # 消费者等待 Kafka partition 数据的最大时间 ms
+  c_fetch_min: 1                  # 消费者从 Kafka partition 获取数据的最小字节数，默认值为 1
+  c_fetch_default: 32             # 消费者从 Kafka partition 获取数据的缓冲区大小，默认值为 32 KB。
+  enable: true                    # 是否开启消息队列
