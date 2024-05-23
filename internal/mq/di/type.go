@@ -10,6 +10,7 @@ const (
 type MessageQueue interface {
 	Messages() <-chan *Message
 	SendMessage(message *Message) error
+	Enable() bool
 }
 
 type Message struct {

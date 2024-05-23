@@ -13,11 +13,17 @@ const (
 	mqSize int = 1000
 )
 
+var _ di.MessageQueue = &Mq{}
+
 type Mq struct {
-	ctrl     *kafka.Controller
+	ctrl     *kafka.Service
 	producer sarama.AsyncProducer
 	consumer sarama.ConsumerGroup
 	handler  *consumerHandler
+}
+
+func (m *Mq) Enable() bool {
+	return m.ctrl.Enable
 }
 
 func (m *Mq) Messages() <-chan *di.Message {
@@ -87,13 +93,7 @@ func (c *consumerHandler) toProducerMessage(msg *di.Message) *sarama.ProducerMes
 	}
 	return m
 }
-func NewMq() di.MessageQueue {
-	// todo cfg
-	addr := []string{"localhost:9094"}
-	cfg := sarama.NewConfig()
-	cfg.Producer.Return.Successes = true
-	cfg.Producer.Return.Errors = true
-	ctrl := kafka.NewController(addr, cfg)
+func NewMq(ctrl *kafka.Service) di.MessageQueue {
 	q := &Mq{
 		ctrl: ctrl,
 	}
