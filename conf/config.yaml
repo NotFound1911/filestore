@@ -21,3 +21,5 @@ mq:
   c_fetch_min: 1                  # 消费者从 Kafka partition 获取数据的最小字节数，默认值为 1
   c_fetch_default: 32             # 消费者从 Kafka partition 获取数据的缓冲区大小，默认值为 32 KB。
   enable: true                    # 是否开启消息队列
+storage:
+  

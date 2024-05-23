@@ -2,7 +2,6 @@ package local
 
 import (
 	"fmt"
-	"github.com/NotFound1911/filestore/internal/storage/common"
 	"github.com/NotFound1911/filestore/internal/storage/di"
 	"io"
 	"os"
@@ -11,7 +10,7 @@ import (
 )
 
 const (
-	localStorage = common.LocalStorage
+	localStorage = di.LocalStorage
 	Name         = "LOCAL"
 )
 

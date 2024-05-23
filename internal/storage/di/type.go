@@ -2,13 +2,14 @@ package di
 
 import (
 	"fmt"
-	"github.com/NotFound1911/filestore/internal/storage/common"
 	"net/url"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 )
+
+const LocalStorage = "local_storage"
 
 // CustomStorage 存储
 type CustomStorage interface {
@@ -70,7 +71,7 @@ func GetMetaInfo(filename, uidStr string) (*BucketInfo, error) {
 	name = url.PathEscape(name)
 	storageName := fmt.Sprintf("%s.%s", uidStr, GetExtension(filename))
 	// 在本地创建uid的目录
-	if err := os.MkdirAll(path.Join(common.LocalStorage, uidStr), 0755); err != nil {
+	if err := os.MkdirAll(path.Join(LocalStorage, uidStr), 0755); err != nil {
 		return nil, err
 	}
 	return &BucketInfo{
