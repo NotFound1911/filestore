@@ -2,6 +2,7 @@ package local
 
 import (
 	"fmt"
+	"github.com/NotFound1911/filestore/config"
 	"github.com/NotFound1911/filestore/internal/storage/di"
 	"io"
 	"os"
@@ -102,9 +103,12 @@ func (s *Storage) Type() string {
 
 type StorageOption func(storage *Storage)
 
-func NewStorage(opts ...StorageOption) di.CustomStorage {
+func NewStorage(conf *config.Configuration, opts ...StorageOption) di.CustomStorage {
 	s := &Storage{
 		RootPath: localStorage,
+	}
+	if conf.Storage.Local.Dir != "" {
+		s.RootPath = conf.Storage.Local.Dir
 	}
 	for _, opt := range opts {
 		opt(s)

@@ -22,4 +22,7 @@ mq:
   c_fetch_default: 32             # 消费者从 Kafka partition 获取数据的缓冲区大小，默认值为 32 KB。
   enable: true                    # 是否开启消息队列
 storage:
-  
+  tmp: ./tmp            # 暂存
+  way:  local_storage   # 存储方式
+local_storage:
+  dir: ./local_storage  # 存储地址
