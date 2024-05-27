@@ -2,8 +2,10 @@ package run
 
 import (
 	"context"
+	"fmt"
 	accountv1 "github.com/NotFound1911/filestore/api/proto/gen/account/v1"
 	v1 "github.com/NotFound1911/filestore/api/rest/apigw/v1"
+	"github.com/NotFound1911/filestore/config"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	"github.com/NotFound1911/filestore/internal/web/middleware"
 	"github.com/gin-gonic/gin"
@@ -14,18 +16,19 @@ import (
 )
 
 func Run() {
-	gin.SetMode(gin.DebugMode)
+	conf := config.NewConfig("")
+	gin.SetMode(conf.Service.Apigw.Http.Mode)
 	server := gin.Default()
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "123456", // no password set
-		DB:       0,        // use default DB
+		Addr:     conf.Redis.Addr,
+		Password: conf.Redis.Password,
+		DB:       conf.Redis.Db,
 	})
 	hdl := jwt.NewRedisJWTHandler(rdb)
 	server.Use(middleware.NewLoginJWTMiddlewareBuilder(hdl).CheckLogin())
 
 	cli, err := etcdv3.New(etcdv3.Config{
-		Endpoints: []string{"localhost:2379"},
+		Endpoints: conf.Etcd.Endpoints,
 	})
 	if err != nil {
 		panic(err)
@@ -33,7 +36,7 @@ func Run() {
 	// 默认是 WRR 负载均衡算法
 	r := etcd.New(cli)
 	cc, err := grpc.DialInsecure(context.Background(),
-		grpc.WithEndpoint("discovery:///user"),
+		grpc.WithEndpoint(fmt.Sprintf("discovery:///%s", conf.Service.Account.Name)),
 		grpc.WithDiscovery(r),
 	)
 	defer cc.Close()
@@ -41,5 +44,5 @@ func Run() {
 
 	userHandler := v1.NewUserHandler(client, hdl)
 	userHandler.RegisterUserRoutes(server)
-	server.Run(":8888")
+	server.Run(conf.Service.Apigw.Http.Addr...)
 }

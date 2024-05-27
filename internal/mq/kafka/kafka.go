@@ -4,54 +4,55 @@ import (
 	"context"
 	"fmt"
 	"github.com/IBM/sarama"
-	"github.com/NotFound1911/filestore/internal/mq/di"
+	ldi "github.com/NotFound1911/filestore/internal/logger/di"
+	mdi "github.com/NotFound1911/filestore/internal/mq/di"
 	"github.com/NotFound1911/filestore/pkg/kafka"
-	"log"
 )
 
 const (
 	mqSize int = 1000
 )
 
-var _ di.MessageQueue = &Mq{}
+var _ mdi.MessageQueue = &Mq{}
 
 type Mq struct {
 	ctrl     *kafka.Service
 	producer sarama.AsyncProducer
 	consumer sarama.ConsumerGroup
 	handler  *consumerHandler
+	logger   ldi.Logger
 }
 
 func (m *Mq) Enable() bool {
 	return m.ctrl.Enable
 }
 
-func (m *Mq) Messages() <-chan *di.Message {
+func (m *Mq) Messages() <-chan *mdi.Message {
 	return m.handler.mc
 }
 
-func (m *Mq) SendMessage(message *di.Message) (err error) {
+func (m *Mq) SendMessage(message *mdi.Message) (err error) {
 	msgs := m.producer.Input()
 	msgs <- m.handler.toProducerMessage(message)
 	select {
 	case msg := <-m.producer.Successes():
-		log.Printf("发送成功:%v\n", string(msg.Value.(sarama.StringEncoder)))
+		m.logger.Info(fmt.Sprintf("发送成功:%v\n", string(msg.Value.(sarama.StringEncoder))))
 	case pErr := <-m.producer.Errors():
-		log.Printf("发送失败:%v,%v\n", pErr.Err, pErr.Msg)
+		m.logger.Error(fmt.Sprintf("发送失败:%v,%v\n", pErr.Err, pErr.Msg))
 		err = fmt.Errorf("%v:%v", pErr.Err, pErr.Msg)
 	}
 	return err
 }
 
 type consumerHandler struct {
-	mc chan *di.Message
+	mc chan *mdi.Message
 }
 
-func (c *consumerHandler) Setup(session sarama.ConsumerGroupSession) error {
+func (c *consumerHandler) Setup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }
 
-func (c *consumerHandler) Cleanup(session sarama.ConsumerGroupSession) error {
+func (c *consumerHandler) Cleanup(_ sarama.ConsumerGroupSession) error {
 	return nil
 }
 
@@ -63,14 +64,14 @@ func (c *consumerHandler) ConsumeClaim(session sarama.ConsumerGroupSession, clai
 	}
 	return nil
 }
-func (c *consumerHandler) toMessage(msg *sarama.ConsumerMessage) *di.Message {
-	m := &di.Message{
+func (c *consumerHandler) toMessage(msg *sarama.ConsumerMessage) *mdi.Message {
+	m := &mdi.Message{
 		Topic:   msg.Topic,
 		Value:   msg.Value,
-		Headers: make([]di.Header, 0, len(msg.Headers)),
+		Headers: make([]mdi.Header, 0, len(msg.Headers)),
 	}
 	for _, v := range msg.Headers {
-		tmp := di.Header{
+		tmp := mdi.Header{
 			Key:   string(v.Key),
 			Value: string(v.Value),
 		}
@@ -78,7 +79,7 @@ func (c *consumerHandler) toMessage(msg *sarama.ConsumerMessage) *di.Message {
 	}
 	return m
 }
-func (c *consumerHandler) toProducerMessage(msg *di.Message) *sarama.ProducerMessage {
+func (c *consumerHandler) toProducerMessage(msg *mdi.Message) *sarama.ProducerMessage {
 	m := &sarama.ProducerMessage{
 		Topic:   msg.Topic,
 		Value:   sarama.StringEncoder(msg.Value),
@@ -93,26 +94,27 @@ func (c *consumerHandler) toProducerMessage(msg *di.Message) *sarama.ProducerMes
 	}
 	return m
 }
-func NewMq(ctrl *kafka.Service) di.MessageQueue {
+func NewMq(ctrl *kafka.Service, logger ldi.Logger) mdi.MessageQueue {
 	q := &Mq{
-		ctrl: ctrl,
+		ctrl:   ctrl,
+		logger: logger,
 	}
 	p, err := sarama.NewAsyncProducer(ctrl.Addr, ctrl.Cfg)
 	if err != nil {
 		panic(err)
 	}
 	q.producer = p
-	c, err := sarama.NewConsumerGroup(ctrl.Addr, di.TopicName, ctrl.Cfg)
+	c, err := sarama.NewConsumerGroup(ctrl.Addr, mdi.TopicName, ctrl.Cfg)
 	if err != nil {
 		panic(err)
 	}
 	q.consumer = c
 	q.handler = &consumerHandler{
-		mc: make(chan *di.Message, mqSize),
+		mc: make(chan *mdi.Message, mqSize),
 	}
 	go func() {
-		if err := q.consumer.Consume(context.Background(), []string{di.TopicName}, q.handler); err != nil {
-			fmt.Println("q.consumer.Consume err:", err)
+		if err := q.consumer.Consume(context.Background(), []string{mdi.TopicName}, q.handler); err != nil {
+			q.logger.Error(fmt.Sprintf("q.consumer.Consume err:%v", err))
 		}
 	}()
 	return q

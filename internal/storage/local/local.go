@@ -3,7 +3,8 @@ package local
 import (
 	"fmt"
 	"github.com/NotFound1911/filestore/config"
-	"github.com/NotFound1911/filestore/internal/storage/di"
+	ldi "github.com/NotFound1911/filestore/internal/logger/di"
+	sdi "github.com/NotFound1911/filestore/internal/storage/di"
 	"io"
 	"os"
 	"path"
@@ -11,13 +12,14 @@ import (
 )
 
 const (
-	localStorage = di.LocalStorage
+	localStorage = sdi.LocalStorage
 	Name         = "LOCAL"
 )
 
 // Storage 本地存储
 type Storage struct {
 	RootPath string
+	logger   ldi.Logger
 }
 
 func (s *Storage) MakeBucket(bucketName string) error {
@@ -34,19 +36,19 @@ func (s *Storage) GetObject(bucketName, objectName string, offset, length int64)
 	objectPath := path.Join(s.RootPath, bucketName, objectName)
 	file, err := os.Open(objectPath)
 	if err != nil {
-		fmt.Println("Failed to open file:", err)
+		s.logger.Error(fmt.Sprintf("Failed to open file:%v", err))
 		return nil, err
 	}
 	defer file.Close()
 	_, err = file.Seek(offset, io.SeekStart)
 	if err != nil {
-		fmt.Println("Error:", err)
+		s.logger.Error(fmt.Sprintf("Error:%v", err))
 		return nil, err
 	}
 	buffer := make([]byte, length)
 	_, err = file.Read(buffer)
 	if err != nil && err != io.EOF {
-		fmt.Println("Error:", err)
+		s.logger.Error(fmt.Sprintf("Read Error:%v", err))
 		return nil, err
 	}
 	return buffer, nil
@@ -70,14 +72,14 @@ func (s *Storage) PutObject(bucketName, objectName, filePath, contentType string
 		// 文件夹不存在，创建新文件夹
 		err := os.Mkdir(folderPath, 0755) // 0755 权限表示用户具有读、写、执行权限，组和其他用户具有读、执行权限
 		if err != nil {
-			fmt.Println("Failed to create folder:", err)
+			s.logger.Error(fmt.Sprintf("Failed to create folder:%v", err))
 			return err
 		}
-		fmt.Println("Folder created successfully.")
+		s.logger.Info(fmt.Sprintf("Folder:%s created successfully.", folderPath))
 	}
 	file, err := os.Create(objectPath)
 	if err != nil {
-		fmt.Println("Failed to create file:", err)
+		s.logger.Error(fmt.Sprintf("Failed to create file:%v", err))
 		return err
 	}
 	defer file.Close()
@@ -85,7 +87,7 @@ func (s *Storage) PutObject(bucketName, objectName, filePath, contentType string
 	// 复制文件内容
 	_, err = io.Copy(file, sourceFile)
 	if err != nil {
-		fmt.Println("Failed to copy file:", err)
+		s.logger.Error(fmt.Sprintf("Failed to copy file:%v", err))
 		return err
 	}
 	return nil
@@ -103,7 +105,7 @@ func (s *Storage) Type() string {
 
 type StorageOption func(storage *Storage)
 
-func NewStorage(conf *config.Configuration, opts ...StorageOption) di.CustomStorage {
+func NewStorage(conf *config.Configuration, opts ...StorageOption) sdi.CustomStorage {
 	s := &Storage{
 		RootPath: localStorage,
 	}
@@ -114,4 +116,9 @@ func NewStorage(conf *config.Configuration, opts ...StorageOption) di.CustomStor
 		opt(s)
 	}
 	return s
+}
+func WithLogger(logger ldi.Logger) StorageOption {
+	return func(storage *Storage) {
+		storage.logger = logger
+	}
 }

@@ -12,6 +12,9 @@ type Configuration struct {
 	Log     Log     `mapstructure:"log" json:"log" yaml:"log"`
 	Mq      Mq      `mapstructure:"mq" json:"mq" yaml:"mq"`
 	Storage Storage `mapstructure:"storage" json:"storage" yaml:"storage"`
+	Redis   Redis   `mapstructure:"redis" json:"redis" yaml:"redis"`
+	Etcd    Etcd    `mapstructure:"etcd" json:"etcd" yaml:"etcd"`
+	Service Service `mapstructure:"service" json:"service" yaml:"service"`
 }
 
 const confFilePath = "conf/config.yaml"

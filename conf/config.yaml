@@ -21,8 +21,46 @@ mq:
   c_fetch_min: 1                  # 消费者从 Kafka partition 获取数据的最小字节数，默认值为 1
   c_fetch_default: 32             # 消费者从 Kafka partition 获取数据的缓冲区大小，默认值为 32 KB。
   enable: true                    # 是否开启消息队列
+
 storage:
   tmp: ./tmp            # 暂存
   way:  local_storage   # 存储方式
 local_storage:
   dir: ./local_storage  # 存储地址
+
+redis:
+  addr: "localhost:6379"
+  password: "123456"
+  db: 0
+
+etcd:
+  endpoints:
+    - localhost:2379
+
+service:          # 微服务
+  apigw:          # api网关
+    name: apigw   # 名称
+    http:         # http配置
+      mode: debug # 模式
+      addr:       # 监听地址
+        - :8888
+
+  account:        # 账户
+    name: account
+    grpc:
+      addr: :8090
+
+  file_manager:
+    name: file_manager
+    grpc:
+      addr: :8091
+
+  upload:
+    name: upload
+    http:           # http配置
+      mode: debug   # 模式
+      addr:         # 监听地址
+        - :8889
+
+  transfer:
+    name: transfer

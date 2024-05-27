@@ -2,6 +2,7 @@ package run
 
 import (
 	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
+	"github.com/NotFound1911/filestore/config"
 	gprcserv "github.com/NotFound1911/filestore/service/file_manager/grpc"
 	"github.com/NotFound1911/filestore/service/file_manager/ioc"
 	"github.com/NotFound1911/filestore/service/file_manager/repository"
@@ -15,14 +16,15 @@ import (
 )
 
 func Run() {
+	conf := config.NewConfig("")
 	cli, err := etcdv3.New(etcdv3.Config{
-		Endpoints: []string{"localhost:2379"},
+		Endpoints: conf.Etcd.Endpoints,
 	})
 	if err != nil {
 		panic(err)
 	}
 	grpcSrv := grpc.NewServer(
-		grpc.Address(":8091"), // todo
+		grpc.Address(conf.Service.FileManager.Grpc.Addr),
 		grpc.Middleware(recovery.Recovery()),
 	)
 	// **************
@@ -41,7 +43,7 @@ func Run() {
 	// etcd 注册中心
 	r := etcd.New(cli)
 	app := kratos.New(
-		kratos.Name("file_manager"),
+		kratos.Name(conf.Service.FileManager.Name),
 		kratos.Server(
 			grpcSrv,
 		),

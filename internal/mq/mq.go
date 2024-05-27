@@ -2,12 +2,13 @@ package mq
 
 import (
 	"github.com/NotFound1911/filestore/config"
-	"github.com/NotFound1911/filestore/internal/mq/di"
+	ldi "github.com/NotFound1911/filestore/internal/logger/di"
+	mdi "github.com/NotFound1911/filestore/internal/mq/di"
 	"github.com/NotFound1911/filestore/internal/mq/kafka"
 	k "github.com/NotFound1911/filestore/pkg/kafka"
 )
 
-func New(conf *config.Configuration, name string) di.MessageQueue {
+func New(conf *config.Configuration, name string, logger ldi.Logger) mdi.MessageQueue {
 	s := k.NewService(conf, name)
-	return kafka.NewMq(s)
+	return kafka.NewMq(s, logger)
 }

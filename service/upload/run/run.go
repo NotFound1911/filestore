@@ -2,8 +2,11 @@ package run
 
 import (
 	"context"
+	"fmt"
 	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
 	"github.com/NotFound1911/filestore/api/rest/upload/v1"
+	"github.com/NotFound1911/filestore/config"
+	"github.com/NotFound1911/filestore/internal/logger"
 	"github.com/NotFound1911/filestore/internal/mq"
 	"github.com/NotFound1911/filestore/internal/storage"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
@@ -21,12 +24,13 @@ import (
 )
 
 func Run() {
-	gin.SetMode(gin.DebugMode)
+	conf := config.NewConfig("")
+	gin.SetMode(conf.Service.Upload.Http.Mode)
 	server := gin.Default()
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "123456", // no password set
-		DB:       0,        // use default DB
+		Addr:     conf.Redis.Addr,
+		Password: conf.Redis.Password, // no password set
+		DB:       conf.Redis.Db,       // use default DB
 	})
 	hdl := jwt.NewRedisJWTHandler(rdb)
 	server.Use(middleware.NewLoginJWTMiddlewareBuilder(hdl).CheckLogin())
@@ -43,20 +47,26 @@ func Run() {
 	uploadService := service.NewUploadService(uploadRepo)
 	// 服务发现
 	cli, err := etcdv3.New(etcdv3.Config{
-		Endpoints: []string{"localhost:2379"},
+		Endpoints: conf.Etcd.Endpoints,
 	})
 	if err != nil {
 		panic(err)
 	}
 	r := etcd.New(cli)
 	cc, err := grpc.DialInsecure(context.Background(),
-		grpc.WithEndpoint("discovery:///file_manager"),
+		grpc.WithEndpoint(fmt.Sprintf("discovery:///%s", conf.Service.FileManager.Name)),
 		grpc.WithDiscovery(r),
 	)
 	defer cc.Close()
 	client := file_managerv1.NewFileManagerServiceClient(cc)
-	uploadHandler := v1.NewHandler(uploadService, hdl, client, storage.New(), mq.New())
+	log := logger.New(conf, conf.Service.Upload.Name)
+	uploadHandler := v1.NewHandler(uploadService,
+		hdl, client, v1.DiHandler{
+			Storage:      storage.New(conf, conf.Service.Upload.Name, log),
+			MessageQueue: mq.New(conf, conf.Service.Upload.Name, log),
+			Logger:       log,
+		})
 	uploadHandler.RegisterUploadRoutes(server)
 
-	server.Run(":8889")
+	server.Run(conf.Service.Upload.Http.Addr...)
 }

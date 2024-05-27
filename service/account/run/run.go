@@ -2,6 +2,7 @@ package run
 
 import (
 	"github.com/NotFound1911/filestore/api/proto/gen/account/v1"
+	"github.com/NotFound1911/filestore/config"
 	gprcserv "github.com/NotFound1911/filestore/service/account/grpc"
 	"github.com/NotFound1911/filestore/service/account/ioc"
 	"github.com/NotFound1911/filestore/service/account/repository"
@@ -15,14 +16,15 @@ import (
 )
 
 func Run() {
+	conf := config.NewConfig("")
 	cli, err := etcdv3.New(etcdv3.Config{
-		Endpoints: []string{"localhost:2379"},
+		Endpoints: conf.Etcd.Endpoints,
 	})
 	if err != nil {
 		panic(err)
 	}
 	grpcSrv := grpc.NewServer(
-		grpc.Address(":8090"),
+		grpc.Address(conf.Service.Account.Grpc.Addr),
 		grpc.Middleware(recovery.Recovery()),
 	)
 	// **************
@@ -41,7 +43,7 @@ func Run() {
 	// etcd 注册中心
 	r := etcd.New(cli)
 	app := kratos.New(
-		kratos.Name("user"),
+		kratos.Name(conf.Service.Account.Name),
 		kratos.Server(
 			grpcSrv,
 		),

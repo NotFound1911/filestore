@@ -44,6 +44,14 @@ func NewService(conf *config.Configuration, name string) *Service {
 
 	// 同时输出到控制台和文件
 	var multiWS zapcore.WriteSyncer
+	// 检查文件夹是否已经存在
+	if _, err := os.Stat(conf.Log.RootDir); os.IsNotExist(err) {
+		// 文件夹不存在，创建新文件夹
+		err := os.Mkdir(conf.Log.RootDir, 0755)
+		if err != nil {
+			panic(fmt.Sprintf("Failed to create folder:%v", err))
+		}
+	}
 	if conf.Log.EnableFile {
 		log := &lumberjack.Logger{
 			Filename:   fmt.Sprintf("%s/%s.log", conf.Log.RootDir, name),

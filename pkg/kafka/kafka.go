@@ -12,12 +12,6 @@ type Service struct {
 	Enable bool
 }
 
-func NewController(addr []string, cfg *sarama.Config) *Service {
-	return &Service{
-		Addr: addr,
-		Cfg:  cfg,
-	}
-}
 func NewService(conf *config.Configuration, name string) *Service {
 	addr := conf.Mq.Addr
 	cfg := sarama.NewConfig()
