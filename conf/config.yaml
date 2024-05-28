@@ -7,7 +7,7 @@ log:
   format: json          # 写入格式 可选json
   show_line: true       # 是否显示调用行
   compress: true        # 是否压缩
-  enable_file: false    # 是否启用日志文件
+  enable_file: true    # 是否启用日志文件
 mq:
   addr:
     - localhost:9094              # 地址

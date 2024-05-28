@@ -3,8 +3,6 @@ package di
 import (
 	"fmt"
 	"net/url"
-	"os"
-	"path"
 	"path/filepath"
 	"strings"
 )
@@ -50,7 +48,7 @@ func selectBucketBySuffix(filename string) string {
 		return "video"
 	case "mp3", "wav", "flac":
 		return "audio"
-	case "pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx":
+	case "pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt":
 		return "doc"
 	case "zip", "rar", "tar", "gz", "7z":
 		return "archive"
@@ -70,10 +68,6 @@ func GetMetaInfo(filename, uidStr string) (*BucketInfo, error) {
 	name := filepath.Base(filename)
 	name = url.PathEscape(name)
 	storageName := fmt.Sprintf("%s.%s", uidStr, GetExtension(filename))
-	// 在本地创建uid的目录
-	if err := os.MkdirAll(path.Join(LocalStorage, uidStr), 0755); err != nil {
-		return nil, err
-	}
 	return &BucketInfo{
 		Bucket:      bucket,
 		StorageName: storageName,

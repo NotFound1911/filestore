@@ -2,7 +2,7 @@ package config
 
 type Log struct {
 	Level      string `mapstructure:"level" json:"level" yaml:"level"`
-	RootDir    string `mapstructure:"root_dir" json:"root_dir" yaml:"root_dir"`
+	Dir        string `mapstructure:"dir" json:"dir" yaml:"dir"`
 	Format     string `mapstructure:"format" json:"format" yaml:"format"`
 	ShowLine   bool   `mapstructure:"show_line" json:"show_line" yaml:"show_line"`
 	MaxBackups int    `mapstructure:"max_backups" json:"max_backups" yaml:"max_backups"`
