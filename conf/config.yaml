@@ -24,9 +24,14 @@ mq:
 
 storage:
   tmp: ./tmp            # 暂存
-  way:  local_storage   # 存储方式
-local_storage:
-  dir: ./local_storage  # 存储地址
+  way:  0   # 存储方式  0 本地存储  1 minio存储
+  local:
+    dir: ./local_storage  # 存储地址
+  minio:
+    endpoint: 127.0.0.1:9001      # 服务地址
+    access_key_id: minioadmin     # 用户名
+    secret_access_key: minioadmin # 密码
+    use_ssl: false                # 是否使用ssl
 
 redis:
   addr: "localhost:6379"

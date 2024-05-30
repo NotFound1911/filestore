@@ -22,9 +22,6 @@ type CustomStorage interface {
 
 	// DeleteObject 删除存储对象
 	DeleteObject(bucketName, objectName string) error
-
-	// Type 类别
-	Type() string
 }
 
 func GetExtension(filename string) string {

@@ -8,7 +8,7 @@ import (
 	k "github.com/NotFound1911/filestore/pkg/kafka"
 )
 
-func New(conf *config.Configuration, name string, logger ldi.Logger) mdi.MessageQueue {
-	s := k.NewService(conf, name)
+func New(conf *config.Configuration, logger ldi.Logger) mdi.MessageQueue {
+	s := k.NewService(conf)
 	return kafka.NewMq(s, logger)
 }

@@ -62,8 +62,8 @@ func Run() {
 	log := logger.New(conf, conf.Service.Upload.Name)
 	uploadHandler := v1.NewHandler(uploadService,
 		hdl, client, v1.DiHandler{
-			Storage:      storage.New(conf, conf.Service.Upload.Name, log),
-			MessageQueue: mq.New(conf, conf.Service.Upload.Name, log),
+			Storage:      storage.New(conf, log),
+			MessageQueue: mq.New(conf, log),
 			Logger:       log,
 		})
 	uploadHandler.RegisterUploadRoutes(server)

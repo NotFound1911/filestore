@@ -12,7 +12,7 @@ type Service struct {
 	Enable bool
 }
 
-func NewService(conf *config.Configuration, name string) *Service {
+func NewService(conf *config.Configuration) *Service {
 	addr := conf.Mq.Addr
 	cfg := sarama.NewConfig()
 	cfg.Net.DialTimeout = time.Duration(conf.Mq.NetDiaTimeout) * time.Second
