@@ -6,7 +6,7 @@ type Service struct {
 	FileManager FileManager `mapstructure:"file_manager" json:"file_manager" yaml:"file_manager"`
 	Upload      Upload      `mapstructure:"upload" json:"upload" yaml:"upload"`
 	Transfer    Transfer    `mapstructure:"transfer" json:"transfer" yaml:"transfer"`
-	Database    []*Database `mapstructure:"database" json:"database" yaml:"database"`
+	Download    Download    `mapstructure:"download" json:"download" yaml:"download"`
 }
 
 type Apigw struct {
@@ -40,4 +40,9 @@ type webServer struct {
 
 type grpcServer struct {
 	Addr string `mapstructure:"addr" json:"addr" yaml:"addr"`
+}
+
+type Download struct {
+	Name string    `mapstructure:"name" json:"name" yaml:"name"`
+	Http webServer `mapstructure:"http" json:"http" yaml:"http"`
 }

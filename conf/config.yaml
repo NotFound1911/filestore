@@ -85,3 +85,10 @@ service:          # 微服务
 
   transfer:
     name: transfer
+
+  download:
+    name: download
+    http:
+      mode: debug
+      addr:
+        - :8890
