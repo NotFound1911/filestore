@@ -50,4 +50,6 @@ func Run() {
 	client := file_managerv1.NewFileManagerServiceClient(cc)
 	log := logger.New(conf, conf.Service.Download.Name)
 	downloadHandler := v1.NewHandler(downService, hdl, client, log)
+	downloadHandler.RegisterDownloadRoutes(server)
+	server.Run(conf.Service.Download.Http.Addr...)
 }

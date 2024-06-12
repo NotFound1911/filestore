@@ -79,7 +79,7 @@ func (h *Handler) Download(ctx *gin.Context) {
 	ctx.File(fileName)
 }
 
-func (h *Handler) RegisterUploadRoutes(core *gin.Engine) {
+func (h *Handler) RegisterDownloadRoutes(core *gin.Engine) {
 	dl := core.Group("/api/storage/v1/download")
 	dl.POST("/dDownload-url", serv.WrapBodyAndClaims(h.DownloadURLHandler))
 	dl.POST("/download", h.Download)
