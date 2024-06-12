@@ -36,7 +36,7 @@ func Run() {
 	server.Use(middleware.NewLoginJWTMiddlewareBuilder(hdl).CheckLogin())
 	// **************
 	// gorm
-	orm := ioc.InitDb()
+	orm := ioc.InitDb(conf)
 	// dao
 	uploadDao := dao.NewOrmUpload(orm)
 	// cache

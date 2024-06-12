@@ -29,7 +29,7 @@ func Run() {
 	)
 	// **************
 	// gorm
-	orm := ioc.InitDb()
+	orm := ioc.InitDb(conf)
 	// dao
 	fileMangerDao := dao.NewOrmFileManager(orm)
 	// repository

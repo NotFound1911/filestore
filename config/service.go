@@ -6,6 +6,7 @@ type Service struct {
 	FileManager FileManager `mapstructure:"file_manager" json:"file_manager" yaml:"file_manager"`
 	Upload      Upload      `mapstructure:"upload" json:"upload" yaml:"upload"`
 	Transfer    Transfer    `mapstructure:"transfer" json:"transfer" yaml:"transfer"`
+	Database    []*Database `mapstructure:"database" json:"database" yaml:"database"`
 }
 
 type Apigw struct {

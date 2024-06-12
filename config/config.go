@@ -9,12 +9,13 @@ import (
 
 // Configuration 配置文件中所有字段对应的结构体
 type Configuration struct {
-	Log     Log     `mapstructure:"log" json:"log" yaml:"log"`
-	Mq      Mq      `mapstructure:"mq" json:"mq" yaml:"mq"`
-	Storage Storage `mapstructure:"storage" json:"storage" yaml:"storage"`
-	Redis   Redis   `mapstructure:"redis" json:"redis" yaml:"redis"`
-	Etcd    Etcd    `mapstructure:"etcd" json:"etcd" yaml:"etcd"`
-	Service Service `mapstructure:"service" json:"service" yaml:"service"`
+	Log      Log      `mapstructure:"log" json:"log" yaml:"log"`
+	Mq       Mq       `mapstructure:"mq" json:"mq" yaml:"mq"`
+	Storage  Storage  `mapstructure:"storage" json:"storage" yaml:"storage"`
+	Redis    Redis    `mapstructure:"redis" json:"redis" yaml:"redis"`
+	Etcd     Etcd     `mapstructure:"etcd" json:"etcd" yaml:"etcd"`
+	Service  Service  `mapstructure:"service" json:"service" yaml:"service"`
+	Database Database `mapstructure:"database" json:"database" yaml:"database"`
 }
 
 const confFilePath = "conf/config.yaml"

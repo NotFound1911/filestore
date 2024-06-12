@@ -3,9 +3,9 @@ package zap
 import (
 	"fmt"
 	"github.com/NotFound1911/filestore/config"
-	"github.com/natefinch/lumberjack"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+	"gopkg.in/natefinch/lumberjack.v2"
 	"os"
 	"time"
 )
