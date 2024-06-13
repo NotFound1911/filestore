@@ -11,8 +11,8 @@ import (
 func Run() {
 	conf := config.NewConfig("")
 	log := logger.New(conf, conf.Service.Transfer.Name)
-	msgQueue := mq.New(conf, conf.Service.Transfer.Name, log)
-	consumerStorage := storage.New(conf, conf.Service.Transfer.Name, log)
+	msgQueue := mq.New(conf, log)
+	consumerStorage := storage.New(conf, log)
 	handler := process.NewHandler(msgQueue, consumerStorage)
 	handler.Start()
 }

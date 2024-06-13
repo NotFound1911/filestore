@@ -18,6 +18,7 @@ apigw
 account
 upload
 file_manager
+transfer
 "
 
 # 关闭service

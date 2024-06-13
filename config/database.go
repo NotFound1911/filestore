@@ -45,7 +45,7 @@ func InitDb(conf *Configuration) *gorm.DB {
 	return nil
 }
 func initPGSQL(database *Database, conf *Configuration) *gorm.DB {
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=Asia/Shanghai",
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%d sslmode=disable TimeZone=Asia/Shanghai",
 		database.Host,
 		database.UserName,
 		database.Password,
