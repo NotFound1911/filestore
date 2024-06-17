@@ -4,12 +4,12 @@ import (
 	"fmt"
 	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
 	ldi "github.com/NotFound1911/filestore/internal/logger/di"
+	sdi "github.com/NotFound1911/filestore/internal/storage/di"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	serv "github.com/NotFound1911/filestore/pkg/server"
 	"github.com/NotFound1911/filestore/service/download/service"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"os"
 )
 
 type Handler struct {
@@ -17,25 +17,32 @@ type Handler struct {
 	logger   ldi.Logger
 	fsClient file_managerv1.FileManagerServiceClient
 	service  service.DownloadService
+	storage  sdi.CustomStorage
+}
+type DiHandler struct {
+	Storage sdi.CustomStorage
+	Logger  ldi.Logger
 }
 
-func NewHandler(service service.DownloadService, hdl jwt.Handler, fsClient file_managerv1.FileManagerServiceClient, logger ldi.Logger) *Handler {
+func NewHandler(service service.DownloadService, hdl jwt.Handler, fsClient file_managerv1.FileManagerServiceClient,
+	diHandler DiHandler) *Handler {
 	return &Handler{
 		Handler:  hdl,
-		logger:   logger,
+		logger:   diHandler.Logger,
 		fsClient: fsClient,
 		service:  service,
+		storage:  diHandler.Storage,
 	}
 }
 
 // DownloadURLHandler 生成下载链接
 func (h *Handler) DownloadURLHandler(ctx *gin.Context, req DownloadURLHandlerReq, uc jwt.UserClaims) (serv.Result, error) {
-	fileHash := req.FileHash
+	fileSha1 := req.FileSha1
 	uId := uc.UId
 	// 查询文件元数据
-	res, err := h.fsClient.GetFileMeta(ctx, &file_managerv1.GetFileMetaReq{FileSha1: fileHash})
+	res, err := h.fsClient.GetFileMeta(ctx, &file_managerv1.GetFileMetaReq{FileSha1: fileSha1})
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("%v 获取元数据:%s失败", uId, fileHash))
+		h.logger.Error(fmt.Sprintf("%v 获取元数据:%s失败", uId, fileSha1))
 		return serv.Result{
 			Code: -1,
 			Msg:  fmt.Sprintf("元数据获取失败"),
@@ -47,7 +54,7 @@ func (h *Handler) DownloadURLHandler(ctx *gin.Context, req DownloadURLHandlerReq
 		res.GetFileMeta().Bucket,
 		res.GetFileMeta().Sha1,
 		res.GetFileMeta().StorageName,
-		res.GetFileMeta().Address,
+		res.GetFileMeta().Address, // todo 不应该写具体位置
 	)
 	return serv.Result{
 		Code: 2000,
@@ -65,13 +72,15 @@ func (h *Handler) Download(ctx *gin.Context) {
 		ctx.String(http.StatusBadRequest, "请提供文件名")
 		return
 	}
+	bucket := ctx.Query("bucket")
+	name := ctx.Query("name")
 
-	// 检查文件是否存在
-	_, err := os.Stat(fileName)
-	if os.IsNotExist(err) {
+	file, err := h.storage.GetObject(bucket, name, 0, -1)
+	if err != nil {
 		ctx.String(http.StatusNotFound, "文件不存在")
 		return
 	}
+	// 检查文件是否存在
 
 	// 设置响应头，告诉浏览器这是一个要下载的文件
 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))

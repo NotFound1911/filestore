@@ -7,6 +7,7 @@ import (
 	v1 "github.com/NotFound1911/filestore/api/rest/download/v1"
 	"github.com/NotFound1911/filestore/config"
 	"github.com/NotFound1911/filestore/internal/logger"
+	"github.com/NotFound1911/filestore/internal/storage"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	"github.com/NotFound1911/filestore/internal/web/middleware"
 	"github.com/NotFound1911/filestore/service/download/ioc"
@@ -49,7 +50,10 @@ func Run() {
 	defer cc.Close()
 	client := file_managerv1.NewFileManagerServiceClient(cc)
 	log := logger.New(conf, conf.Service.Download.Name)
-	downloadHandler := v1.NewHandler(downService, hdl, client, log)
+	downloadHandler := v1.NewHandler(downService, hdl, client, v1.DiHandler{
+		Storage: storage.New(conf, log),
+		Logger:  log,
+	})
 	downloadHandler.RegisterDownloadRoutes(server)
 	server.Run(conf.Service.Download.Http.Addr...)
 }

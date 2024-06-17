@@ -1,6 +1,7 @@
 package local
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/NotFound1911/filestore/config"
 	ldi "github.com/NotFound1911/filestore/internal/logger/di"
@@ -44,6 +45,24 @@ func (s *Storage) GetObject(bucketName, objectName string, offset, length int64)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("Error:%v", err))
 		return nil, err
+	}
+	// length = -1 表示读取所有
+	if length == -1 {
+		// 创建缓冲区来存放文件内容
+		buffer := bytes.NewBuffer(nil)
+		tempBuffer := make([]byte, 1024) // 临时缓冲区
+		for {
+			n, err := file.Read(tempBuffer)
+			if err != nil && err != io.EOF {
+				s.logger.Error(fmt.Sprintf("Read Error: %v", err))
+				return nil, err
+			}
+			if n == 0 {
+				break // 读取完成
+			}
+			buffer.Write(tempBuffer[:n])
+		}
+		return buffer.Bytes(), nil
 	}
 	buffer := make([]byte, length)
 	_, err = file.Read(buffer)

@@ -19,11 +19,13 @@ type FileManagerDao interface {
 }
 
 type FileMetaInfo struct {
-	Id      int64  `gorm:"column:id;primaryKey;not null;autoIncrement;comment:自增ID"`
-	Sha1    string `gorm:"column:sha1;not null;unique;comment:文件sha1"`
-	Size    int64  `gorm:"column:size;not null;comment:文件size"`
-	Address string `gorm:"column:address;comment:文件存储地址"`
-	Type    string `gorm:"column:type;comment:文件类型"`
+	Id          int64  `gorm:"column:id;primaryKey;not null;autoIncrement;comment:自增ID"`
+	Sha1        string `gorm:"column:sha1;not null;unique;comment:文件sha1"`
+	Size        int64  `gorm:"column:size;not null;comment:文件size"`
+	Address     string `gorm:"column:address;comment:文件存储地址"`
+	Type        string `gorm:"column:type;comment:文件类型"`
+	Bucket      string `gorm:"column:bucket;comment:桶"`
+	StorageName string `gorm:"column:storage_name;comment:存储名称"`
 }
 
 type UserFileInfo struct {

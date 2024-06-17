@@ -44,10 +44,12 @@ func NewFileManagerServiceServer(svc service.FileManagerService) *FileManagerSer
 
 func (f *FileManagerServiceServer) toFileMetaDomain(in *file_managerv1.InsertIfNotExistFileMetaReq) domain.FileMeta {
 	return domain.FileMeta{
-		Sha1:    in.FileMeta.Sha1,
-		Size:    in.FileMeta.Size,
-		Address: in.FileMeta.Address,
-		Type:    in.FileMeta.Type,
+		Sha1:        in.FileMeta.Sha1,
+		Size:        in.FileMeta.Size,
+		Address:     in.FileMeta.Address,
+		Type:        in.FileMeta.Type,
+		Bucket:      in.FileMeta.Bucket,
+		StorageName: in.FileMeta.StorageName,
 	}
 }
 func (f *FileManagerServiceServer) toUserFileDomain(in *file_managerv1.InsertUserFileReq) domain.UserFile {
@@ -62,9 +64,11 @@ func (f *FileManagerServiceServer) toUserFileDomain(in *file_managerv1.InsertUse
 }
 func (f *FileManagerServiceServer) toFileMetaProto(meta domain.FileMeta) file_managerv1.FileMeta {
 	return file_managerv1.FileMeta{
-		Size:    meta.Size,
-		Sha1:    meta.Sha1,
-		Address: meta.Address,
-		Type:    meta.Type,
+		Size:        meta.Size,
+		Sha1:        meta.Sha1,
+		Address:     meta.Address,
+		Type:        meta.Type,
+		Bucket:      meta.Bucket,
+		StorageName: meta.StorageName,
 	}
 }

@@ -79,7 +79,6 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 	}
 	// 3. 构建文件元信息
 	now := time.Now()
-	// todo 构造元数据
 	upInfo := domain.Upload{
 		UId:      uc.UId,
 		FileName: head.Filename,

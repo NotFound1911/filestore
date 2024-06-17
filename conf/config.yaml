@@ -24,7 +24,7 @@ mq:
 
 storage:
   tmp: ./tmp            # 暂存
-  way:  0   # 存储方式  0 本地存储  1 minio存储
+  way:  1   # 存储方式  0 本地存储  1 minio存储
   local:
     dir: ./local_storage  # 存储地址
   minio:

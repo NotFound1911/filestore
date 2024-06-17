@@ -1,6 +1,7 @@
 package minio
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	ldi "github.com/NotFound1911/filestore/internal/logger/di"
@@ -44,6 +45,23 @@ func (s *Storage) GetObject(bucketName, objectName string, offset, length int64)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("%s %s seek %d failed,err:%v", bucketName, objectName, offset, err))
 		return nil, err
+	}
+	if length == -1 {
+		// 读取所有剩余内容
+		buffer := bytes.NewBuffer(nil)
+		tempBuffer := make([]byte, 1024)
+		for {
+			n, err := obj.Read(tempBuffer)
+			if err != nil && err != io.EOF {
+				s.logger.Error(fmt.Sprintf("Read failed: %v", err))
+				return nil, err
+			}
+			if n == 0 {
+				break
+			}
+			buffer.Write(tempBuffer[:n])
+		}
+		return buffer.Bytes(), nil
 	}
 	data := make([]byte, length)
 	n, err := obj.Read(data) // 这里有read，就需要close

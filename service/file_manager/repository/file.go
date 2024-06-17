@@ -61,11 +61,13 @@ func NewFileManagerRepository(dao dao.FileManagerDao) FileManagerRepository {
 }
 func (repo *fileManagerRepo) toFileMetaEntity(u domain.FileMeta) dao.FileMetaInfo {
 	return dao.FileMetaInfo{
-		Id:      u.Id,
-		Sha1:    u.Sha1,
-		Size:    u.Size,
-		Address: u.Address,
-		Type:    u.Type,
+		Id:          u.Id,
+		Sha1:        u.Sha1,
+		Size:        u.Size,
+		Address:     u.Address,
+		Type:        u.Type,
+		Bucket:      u.Bucket,
+		StorageName: u.StorageName,
 	}
 }
 
@@ -81,11 +83,13 @@ func (repo *fileManagerRepo) toUserFileEntity(u domain.UserFile) dao.UserFileInf
 }
 func (repo *fileManagerRepo) toFileMetaDomain(u dao.FileMetaInfo) domain.FileMeta {
 	return domain.FileMeta{
-		Id:      u.Id,
-		Sha1:    u.Sha1,
-		Size:    u.Size,
-		Address: u.Address,
-		Type:    u.Type,
+		Id:          u.Id,
+		Sha1:        u.Sha1,
+		Size:        u.Size,
+		Address:     u.Address,
+		Type:        u.Type,
+		Bucket:      u.Bucket,
+		StorageName: u.StorageName,
 	}
 }
 func (repo *fileManagerRepo) toUserFileDomain(u dao.UserFileInfo) domain.UserFile {
