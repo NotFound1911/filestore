@@ -20,7 +20,7 @@ mq:
   c_max_wait_time: 250            # 消费者等待 Kafka partition 数据的最大时间 ms
   c_fetch_min: 1                  # 消费者从 Kafka partition 获取数据的最小字节数，默认值为 1
   c_fetch_default: 32             # 消费者从 Kafka partition 获取数据的缓冲区大小，默认值为 32 KB。
-  enable: true                    # 是否开启消息队列
+  enable: false                    # 是否开启消息队列
 
 storage:
   tmp: ./tmp            # 暂存
@@ -46,7 +46,7 @@ database:
   db_name: default
   driver: postgres                # 数据库驱动
   host: 127.0.0.1                 # 服务地址
-  port: 5432                      # 端口号
+  port: 15432                      # 端口号
   database: postgres              # 数据库名称
   username: postgres              # 用户名
   password: 123456                # 密码

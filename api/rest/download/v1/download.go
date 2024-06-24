@@ -48,13 +48,10 @@ func (h *Handler) DownloadURLHandler(ctx *gin.Context, req DownloadURLHandlerReq
 			Msg:  fmt.Sprintf("元数据获取失败"),
 		}, err
 	}
-	fmt.Printf("res:%v\n", res)
-	// todo
-	uri := fmt.Sprintf("bucket=%s&sha1=%s&name=%s&address=%s",
+	uri := fmt.Sprintf("bucket=%s&sha1=%s&name=%s",
 		res.GetFileMeta().Bucket,
 		res.GetFileMeta().Sha1,
 		res.GetFileMeta().StorageName,
-		res.GetFileMeta().Address, // todo 不应该写具体位置
 	)
 	return serv.Result{
 		Code: 2000,
@@ -65,7 +62,6 @@ func (h *Handler) DownloadURLHandler(ctx *gin.Context, req DownloadURLHandlerReq
 
 // Download 文件下载
 func (h *Handler) Download(ctx *gin.Context) {
-	// todo
 	// 获取文件名
 	fileName := ctx.Query("filename")
 	if fileName == "" {
@@ -80,12 +76,11 @@ func (h *Handler) Download(ctx *gin.Context) {
 		ctx.String(http.StatusNotFound, "文件不存在")
 		return
 	}
-	// 检查文件是否存在
-
 	// 设置响应头，告诉浏览器这是一个要下载的文件
 	ctx.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", fileName))
 	ctx.Header("Content-Type", "application/octet-stream")
-	ctx.File(fileName)
+	// 将文件内容写入响应体
+	ctx.Data(http.StatusOK, "application/octet-stream", file)
 }
 
 func (h *Handler) RegisterDownloadRoutes(core *gin.Engine) {

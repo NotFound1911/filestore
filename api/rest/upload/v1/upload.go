@@ -126,7 +126,12 @@ func (h *Handler) UploadFile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, 
 		}, err
 	}
 	if !h.messageQueue.Enable() { // 同步写入
-		h.storage.PutObject(storageMetaInfo.Bucket, storageMetaInfo.StorageName, location, "")
+		if err = h.storage.PutObject(storageMetaInfo.Bucket, storageMetaInfo.StorageName, location, ""); err != nil {
+			return serv.Result{
+				Code: -1,
+				Msg:  fmt.Sprintf("文件存储失败, err:%s", err.Error()),
+			}, err
+		}
 	} else {
 		// 消息队列 异步写入
 		msg := mdi.Message{

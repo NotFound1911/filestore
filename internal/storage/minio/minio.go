@@ -41,6 +41,12 @@ func (s *Storage) GetObject(bucketName, objectName string, offset, length int64)
 			s.logger.Warn(fmt.Sprintf("%+v closed failed,err:%v", obj, err))
 		}
 	}(obj)
+	stat, err := obj.Stat()
+	if err != nil {
+		s.logger.Error(fmt.Sprintf("Failed to stat object %s/%s: %v", bucketName, objectName, err))
+		return nil, err
+	}
+	s.logger.Debug(fmt.Sprintf("Object size: %d", stat.Size))
 	_, err = obj.Seek(offset, io.SeekStart)
 	if err != nil {
 		s.logger.Error(fmt.Sprintf("%s %s seek %d failed,err:%v", bucketName, objectName, offset, err))
