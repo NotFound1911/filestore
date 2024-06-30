@@ -28,7 +28,7 @@ storage:
   local:
     dir: ./local_storage  # 存储地址
   minio:
-    endpoint: 127.0.0.1:9001      # 服务地址
+    endpoint: 127.0.0.1:9000      # 服务地址
     access_key_id: minioadmin     # 用户名
     secret_access_key: minioadmin # 密码
     use_ssl: false                # 是否使用ssl

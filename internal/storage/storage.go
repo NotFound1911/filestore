@@ -10,15 +10,20 @@ import (
 )
 
 func New(conf *config.Configuration, logger ldi.Logger) di.CustomStorage {
-	// todo config
+	var storageHandler di.CustomStorage
 	switch conf.Storage.Way {
 	case config.LocalStorage:
 		return local.NewStorage(conf, local.WithLogger(logger))
 	case config.MinioStorage:
 		service := m.NewService(conf)
-		return minio.NewStorage(service, logger)
+		storageHandler = minio.NewStorage(service, logger)
 	default:
-		return local.NewStorage(conf, local.WithLogger(logger))
+		storageHandler = local.NewStorage(conf, local.WithLogger(logger))
 	}
-
+	for _, bucket := range []string{"image", "video", "audio", "archive", "unknown", "doc"} {
+		if err := storageHandler.MakeBucket(bucket); err != nil {
+			panic(err)
+		}
+	}
+	return storageHandler
 }
