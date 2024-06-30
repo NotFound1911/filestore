@@ -19,6 +19,7 @@ account
 upload
 file_manager
 transfer
+download
 "
 
 # 关闭service

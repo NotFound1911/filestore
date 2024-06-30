@@ -34,6 +34,7 @@ file_manager
 account
 apigw
 transfer
+download
 "
 # 执行编译service
 mkdir -p cmd/bin/ && rm -f service/cmd/*
