@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .register-box {
+            width: 300px;
+            margin: auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .register-box input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .register-box button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        .register-box button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+<div class="register-box">
+    <h2>Register</h2>
+    <form id="registerForm" action="/register" method="post">
+        <input type="email" name="email" id="email" placeholder="Email" required><br><br>
+        <input type="password" name="password" id="password" placeholder="Password" required><br><br>
+        <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required><br><br>
+        <button type="submit" onclick="submitForm()">Register</button>
+    </form>
+    <p>Already have an account? <a href="/">Login here</a>.</p>
+</div>
+
+<script>
+    function submitForm() {
+        var email = document.getElementById('email').value;
+        var password = document.getElementById('password').value;
+        var confirm_password = document.getElementById('confirm_password').value;
+
+        // Perform validation (e.g., check if passwords match)
+
+        // Create a JSON object with the data
+        var data = {
+            email: email,
+            password: password,
+            confirm_password: confirm_password
+        };
+
+        // Send a POST request to the server
+        fetch('/register', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
+            .then(data => {
+                console.log('Registration successful:', data);
+                // Optionally redirect to a success page or handle success in UI
+            })
+            .catch(error => {
+                console.error('Error during registration:', error);
+                // Handle error condition, show message to user, etc.
+            });
+    }
+</script>
+</body>
+</html>
