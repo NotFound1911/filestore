@@ -44,12 +44,10 @@
 <body>
 <div class="register-box">
     <h2>Register</h2>
-    <form id="registerForm" action="/register" method="post">
-        <input type="email" name="email" id="email" placeholder="Email" required><br><br>
-        <input type="password" name="password" id="password" placeholder="Password" required><br><br>
-        <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required><br><br>
-        <button type="submit" onclick="submitForm()">Register</button>
-    </form>
+    <input type="email" name="email" id="email" placeholder="Email" required><br><br>
+    <input type="password" name="password" id="password" placeholder="Password" required><br><br>
+    <input type="password" name="confirm_password" id="confirm_password" placeholder="Confirm Password" required><br><br>
+    <button type="submit" onclick="submitForm()">Register</button>
     <p>Already have an account? <a href="/">Login here</a>.</p>
 </div>
 
@@ -69,7 +67,7 @@
         };
 
         // Send a POST request to the server
-        fetch('/register', {
+        fetch('/signup', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -85,6 +83,7 @@
             .then(data => {
                 console.log('Registration successful:', data);
                 // Optionally redirect to a success page or handle success in UI
+                window.location.href = '/register-successful'; // 重定向到成功页面
             })
             .catch(error => {
                 console.error('Error during registration:', error);

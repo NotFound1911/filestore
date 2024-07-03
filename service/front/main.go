@@ -18,28 +18,6 @@ func registerHandler(w http.ResponseWriter, r *http.Request) {
 	tmpl.Execute(w, nil)
 }
 
-// 处理登录请求
-func loginHandler(w http.ResponseWriter, r *http.Request) {
-	// 解析表单数据
-	err := r.ParseForm()
-	if err != nil {
-		http.Error(w, "Failed to parse form", http.StatusBadRequest)
-		return
-	}
-
-	// 获取用户名和密码
-	username := r.Form.Get("username")
-	password := r.Form.Get("password")
-	fmt.Println("username:", username)
-	fmt.Println("password:", password)
-	// 假设这里进行简单的验证，实际情况需要更复杂的逻辑
-	if username == "admin" && password == "admin123" {
-		fmt.Fprintf(w, "Welcome, %s!", username)
-	} else {
-		fmt.Fprintf(w, "Invalid username or password.")
-	}
-}
-
 func main() {
 	server := gin.Default()
 	server.HTMLRender = loadTemplates(staticPath)

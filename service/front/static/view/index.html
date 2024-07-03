@@ -39,15 +39,40 @@
     .login-box button:hover {
       background-color: #45a049;
     }
+    /* 新增的样式规则 */
+    .login-box .input-group {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 15px;
+    }
+    .login-box label {
+      flex: 1;
+      text-align: left;
+      margin-right: 10px;
+    }
+    .login-box input[type="text"],
+    .login-box input[type="password"] {
+      flex: 3;
+      width: auto;
+    }
   </style>
 </head>
 <body>
 <div class="login-box">
   <h2>Filestore 网盘</h2>
-  <form action="/login" method="post">
-    <input type="text" name="username" placeholder="Username" required><br><br>
-    <input type="password" name="password" placeholder="Password" required><br><br>
-    <button type="submit">登录</button>
+  <form action="/login" method="POST">
+    <div class="input-group">
+      <label for="email">Email</label>
+      <input type="text" id="email" name="email" placeholder="email" required>
+    </div>
+    <div class="input-group">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" placeholder="password" required>
+    </div>
+    <div>
+      <button type="submit">Login</button>
+    </div>
   </form>
   <!-- 新增的注册按钮 -->
   <button onclick="location.href='/register'" style="background-color: #008CBA;">注册</button>
