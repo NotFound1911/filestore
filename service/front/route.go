@@ -64,10 +64,22 @@ func signupHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		// todo
+		// todo 发送注册请求
+
 		fmt.Println("req:", req)
+		res, err := signupRequest(req)
+		fmt.Println("res:", res)
+		fmt.Println("err:", err)
+		if err != nil || res.RespStatusCode != 200 {
+			c.JSON(http.StatusBadRequest, "请求错误")
+			return
+		}
 		// 登录成功页面
-		c.JSON(http.StatusOK, "注册成功")
+		if res.Code != 2000 {
+			c.JSON(http.StatusOK, "注册失败")
+		} else {
+			c.JSON(http.StatusOK, "注册成功")
+		}
 	}
 }
 
