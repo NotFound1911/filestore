@@ -7,9 +7,9 @@ services:
       - ETCD_ADVERTISE_CLIENT_URLS=http://etcd:2379
     ports:
       #      客户端通信接口
-      - 2379:2379
+      - 12379:2379
       #      集群节点通信端口
-      - 2380:2380
+      - 12380:2380
   etcdkeeper:
     image: evildecay/etcdkeeper:latest
     container_name: "etcdkeeper"

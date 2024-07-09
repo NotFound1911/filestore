@@ -40,7 +40,7 @@ redis:
 
 etcd:
   endpoints:
-    - localhost:2379
+    - localhost:12379
 
 database:
   db_name: default

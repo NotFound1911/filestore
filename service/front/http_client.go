@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	serv "github.com/NotFound1911/filestore/pkg/server"
 	"io"
 	"io/ioutil"
@@ -25,7 +26,7 @@ var (
 
 type Request struct {
 	Url       string
-	Body      io.ReadCloser
+	Body      io.Reader
 	HeaderSet map[string]string
 	Method    string
 	Params    map[string]string
@@ -54,6 +55,7 @@ func init() {
 
 // ask 建立http请求，返回header信息
 func ask(requester Request) (*Response, error) {
+	fmt.Println("url:", requester.Url)
 	request, err := http.NewRequest(requester.Method, requester.Url, requester.Body)
 	if err != nil {
 		return &Response{RespStatusCode: http.StatusBadRequest}, err
@@ -95,6 +97,7 @@ func checkRespStatus(resp *http.Response) (*Response, error) {
 			return nil, err
 		}
 		respRes.RespHeader = resp.Header
+		respRes.RespStatusCode = resp.StatusCode
 		return &respRes, nil
 	}
 	return nil, errors.New(string(bodyBytes))

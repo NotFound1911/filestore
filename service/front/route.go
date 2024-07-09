@@ -75,11 +75,7 @@ func signupHandler() gin.HandlerFunc {
 			return
 		}
 		// 登录成功页面
-		if res.Code != 2000 {
-			c.JSON(http.StatusOK, "注册失败")
-		} else {
-			c.JSON(http.StatusOK, "注册成功")
-		}
+		c.JSON(http.StatusOK, res.Result)
 	}
 }
 
