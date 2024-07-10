@@ -3,35 +3,87 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login Successful</title>
+  <title>User Profile and File List</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
-      text-align: center;
-      padding-top: 50px;
-    }
-    .container {
-      background-color: #fff;
-      border-radius: 5px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
-      margin: 0 auto;
       padding: 20px;
     }
-    h1 {
-      color: #333;
+    .profile {
+      margin-bottom: 20px;
     }
-    p {
-      color: #666;
+    .file-list {
+      margin-bottom: 20px;
+    }
+    .file-item {
+      margin-bottom: 10px;
+    }
+    button {
+      margin-right: 10px;
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <h1>Login Successful</h1>
-  <p>Welcome back! You are now logged in.</p>
-  <!-- 可以根据需要添加更多内容，比如显示用户名等 -->
+<div class="profile">
+  <h2>User Profile</h2>
+  <p><strong>Name:</strong> <span id="userName"></span></p>
+  <p><strong>Email:</strong> <span id="userEmail"></span></p>
 </div>
+
+<div class="file-list">
+  <h2>File List</h2>
+  <div id="fileList"></div>
+</div>
+
+<button id="uploadButton">Upload File</button>
+
+<script>
+  // Function to fetch user profile information
+  function fetchUserProfile() {
+    fetch('https://api.example.com/profile')
+            .then(response => response.json())
+            .then(data => {
+              document.getElementById('userName').textContent = data.name;
+              document.getElementById('userEmail').textContent = data.email;
+            })
+            .catch(error => console.error('Error fetching profile:', error));
+  }
+
+  // Function to fetch user's file list
+  function fetchFileList() {
+    fetch('https://api.example.com/list')
+            .then(response => response.json())
+            .then(data => {
+              const fileListDiv = document.getElementById('fileList');
+              fileListDiv.innerHTML = ''; // Clear previous list
+
+              data.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.classList.add('file-item');
+                fileItem.innerHTML = `<span>${file.name}</span> <button onclick="downloadFile('${file.id}')">Download</button>`;
+                fileListDiv.appendChild(fileItem);
+              });
+            })
+            .catch(error => console.error('Error fetching file list:', error));
+  }
+
+  // Function to handle file download
+  function downloadFile(fileId) {
+    // Assuming fileId is used to download the file
+    window.open(`https://api.example.com/download/${fileId}`, '_blank');
+  }
+
+  // Event listener for upload button
+  document.getElementById('uploadButton').addEventListener('click', () => {
+    // Implement your upload functionality here, e.g., open a modal or redirect to upload page
+    alert('Implement your upload functionality here.');
+  });
+
+  // Fetch user profile and file list on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    fetchUserProfile();
+    fetchFileList();
+  });
+</script>
 </body>
 </html>

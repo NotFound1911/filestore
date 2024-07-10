@@ -43,7 +43,7 @@ func init() {
 				Timeout:   30 * time.Second, // tcp连接超时时间
 				KeepAlive: 60 * time.Second, // 保持长连接的时间
 				DualStack: true,
-			}).DialContext,             // 设置连接的参数
+			}).DialContext, // 设置连接的参数
 			MaxIdleConns:          100, // 最大空闲连接
 			MaxConnsPerHost:       100,
 			MaxIdleConnsPerHost:   100,              // 每个host保持的空闲连接数

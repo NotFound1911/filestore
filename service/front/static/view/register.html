@@ -81,13 +81,18 @@
                 return response.json();
             })
             .then(data => {
-                console.log('Registration successful:', data);
-                // Optionally redirect to a success page or handle success in UI
-                window.location.href = '/register-successful'; // 重定向到成功页面
+                console.log('Registration response:', data);
+                if (data.code !== 2000) {
+                    console.error('Registration failed:', data.msg);
+                    alert('注册失败: ' + data.msg); // 显示注册失败信息
+                } else {
+                    console.log('Registration successful');
+                    window.location.href = '/register-successful'; // 重定向到成功页面
+                }
             })
             .catch(error => {
                 console.error('Error during registration:', error);
-                // Handle error condition, show message to user, etc.
+                alert('Registration failed. Please try again.'); // 弹出提示框或其他方式显示注册失败信息
             });
     }
 </script>

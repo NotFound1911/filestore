@@ -1,10 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
 	"net/http"
+)
+
+var (
+	X_Jwt_Token         = ""
+	X_Refresh_Token     = ""
+	Key_X_Jwt_Token     = "X-Jwt-Token"
+	Key_X_Refresh_Token = "X-Refresh-Token"
 )
 
 // loadTemplates 加载模板文件
@@ -49,8 +55,13 @@ func loginHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		// todo
-		fmt.Println("req:", req)
+		res, err := loginRequest(req)
+		if err != nil || res.RespStatusCode != 200 {
+			c.JSON(http.StatusBadRequest, "请求错误")
+			return
+		}
+		X_Jwt_Token = res.RespHeader.Get(Key_X_Jwt_Token)
+		X_Refresh_Token = res.RespHeader.Get(Key_X_Refresh_Token)
 		// 登录成功页面
 		c.HTML(http.StatusOK, "home.html", gin.H{"title": "filestore"})
 	}
@@ -64,12 +75,7 @@ func signupHandler() gin.HandlerFunc {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		}
-		// todo 发送注册请求
-
-		fmt.Println("req:", req)
 		res, err := signupRequest(req)
-		fmt.Println("res:", res)
-		fmt.Println("err:", err)
 		if err != nil || res.RespStatusCode != 200 {
 			c.JSON(http.StatusBadRequest, "请求错误")
 			return
