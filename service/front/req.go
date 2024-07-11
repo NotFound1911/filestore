@@ -8,8 +8,10 @@ import (
 )
 
 const (
-	signupUrl string = "/api/storage/v1/users/signup"
-	loginUrl  string = "/api/storage/v1/users/login"
+	signupUrl  string = "/api/storage/v1/users/signup"
+	loginUrl   string = "/api/storage/v1/users/login"
+	profileUrl string = "/api/storage/v1/users/profile"
+	listUrl    string = "/api/storage/v1/users/file-list"
 )
 const (
 	apigw string = "http://localhost:8888"
@@ -47,6 +49,29 @@ func loginRequest(req *LoginReq) (*Response, error) {
 		Url:    fmt.Sprintf("%s%s", apigw, loginUrl),
 		Method: http.MethodPost,
 		Body:   body,
+	}
+	return ask(request)
+}
+
+func profileRequest() (*Response, error) {
+
+	request := Request{
+		Url:    fmt.Sprintf("%s%s", apigw, profileUrl),
+		Method: http.MethodGet,
+		HeaderSet: map[string]string{
+			"Authorization": fmt.Sprintf("%s %s", X_Refresh_Token, X_Jwt_Token),
+		},
+	}
+	return ask(request)
+}
+
+func listRequest() (*Response, error) {
+	request := Request{
+		Url:    fmt.Sprintf("%s%s", apigw, listUrl),
+		Method: http.MethodGet,
+		HeaderSet: map[string]string{
+			"Authorization": fmt.Sprintf("%s %s", X_Refresh_Token, X_Jwt_Token),
+		},
 	}
 	return ask(request)
 }

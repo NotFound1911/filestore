@@ -218,7 +218,7 @@ func TestUserHandler_SignUp(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 			userSvc := tc.mock(ctrl)
-			hdl := NewUserHandler(userSvc, nil)
+			hdl := NewUserHandler(userSvc, nil, nil)
 
 			gin.SetMode(gin.TestMode)
 			core := gin.Default()

@@ -26,7 +26,6 @@
 <body>
 <div class="profile">
   <h2>User Profile</h2>
-  <p><strong>Name:</strong> <span id="userName"></span></p>
   <p><strong>Email:</strong> <span id="userEmail"></span></p>
 </div>
 
@@ -40,18 +39,21 @@
 <script>
   // Function to fetch user profile information
   function fetchUserProfile() {
-    fetch('https://api.example.com/profile')
+    fetch('http://localhost:8080/profile')
             .then(response => response.json())
             .then(data => {
-              document.getElementById('userName').textContent = data.name;
-              document.getElementById('userEmail').textContent = data.email;
+              if (data.code === 2000) {
+                document.getElementById('userEmail').textContent = data.data.email;
+              } else {
+                console.error('Error fetching profile:', data.msg);
+              }
             })
             .catch(error => console.error('Error fetching profile:', error));
   }
 
   // Function to fetch user's file list
   function fetchFileList() {
-    fetch('https://api.example.com/list')
+    fetch('http://localhost:8080/list')
             .then(response => response.json())
             .then(data => {
               const fileListDiv = document.getElementById('fileList');

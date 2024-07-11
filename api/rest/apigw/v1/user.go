@@ -2,6 +2,7 @@ package v1
 
 import (
 	"github.com/NotFound1911/filestore/api/proto/gen/account/v1"
+	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
 	"github.com/NotFound1911/filestore/errs"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
 	serv "github.com/NotFound1911/filestore/pkg/server"
@@ -23,14 +24,16 @@ type UserHandler struct {
 	emailRexExp    *regexp.Regexp
 	passwordRexExp *regexp.Regexp
 	client         accountv1.AccountServiceClient
+	fsClient       file_managerv1.FileManagerServiceClient
 }
 
-func NewUserHandler(client accountv1.AccountServiceClient, hdl jwt.Handler) *UserHandler {
+func NewUserHandler(client accountv1.AccountServiceClient, hdl jwt.Handler, fsClient file_managerv1.FileManagerServiceClient) *UserHandler {
 	return &UserHandler{
 		emailRexExp:    regexp.MustCompile(emailRegexPattern, regexp.None),
 		passwordRexExp: regexp.MustCompile(passwordRegexPattern, regexp.None),
 		client:         client,
 		Handler:        hdl,
+		fsClient:       fsClient,
 	}
 }
 func (u *UserHandler) Signup(ctx *gin.Context, req SignupReq) (serv.Result, error) {
@@ -140,10 +143,41 @@ func (u *UserHandler) Profile(ctx *gin.Context, uc jwt.UserClaims) (serv.Result,
 		},
 	}, nil
 }
+
+func (u *UserHandler) FileList(ctx *gin.Context, uc jwt.UserClaims) (serv.Result, error) {
+	res, err := u.fsClient.GetFileMetaByUserId(ctx, &file_managerv1.GetFileMetaByUserIdReq{Uid: uc.UId})
+	if err != nil {
+		return serv.Result{
+			Code: -1,
+			Msg:  "查询失败",
+		}, err
+	}
+	type file struct {
+		Bucket string
+		Name   string
+		Size   int64
+	}
+	result := make([]file, 0, len(res.GetFileMeta()))
+	for _, v := range res.FileMeta {
+		f := file{
+			Bucket: v.Bucket,
+			Name:   v.StorageName,
+			Size:   v.Size,
+		}
+		result = append(result, f)
+	}
+	return serv.Result{
+		Code: 2000,
+		Msg:  "查询成功",
+		Data: result,
+	}, nil
+}
+
 func (u *UserHandler) RegisterUserRoutes(core *gin.Engine) {
 	ug := core.Group("/api/storage/v1/users")
 	ug.POST("/signup", serv.WrapBody(u.Signup))
 	ug.POST("/login", serv.WrapBody(u.LoginJWT))
 	ug.POST("/logout", u.LogoutJWT)
 	ug.GET("/profile", serv.WrapClaims(u.Profile))
+	ug.GET("file-list", serv.WrapClaims(u.FileList))
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	accountv1 "github.com/NotFound1911/filestore/api/proto/gen/account/v1"
+	file_managerv1 "github.com/NotFound1911/filestore/api/proto/gen/file_manager/v1"
 	v1 "github.com/NotFound1911/filestore/api/rest/apigw/v1"
 	"github.com/NotFound1911/filestore/config"
 	"github.com/NotFound1911/filestore/internal/web/jwt"
@@ -37,12 +38,13 @@ func Run() {
 	r := etcd.New(cli)
 	cc, err := grpc.DialInsecure(context.Background(),
 		grpc.WithEndpoint(fmt.Sprintf("discovery:///%s", conf.Service.Account.Name)),
+		grpc.WithEndpoint(fmt.Sprintf("discovery:///%s", conf.Service.FileManager.Name)),
 		grpc.WithDiscovery(r),
 	)
 	defer cc.Close()
 	client := accountv1.NewAccountServiceClient(cc)
-
-	userHandler := v1.NewUserHandler(client, hdl)
+	fClient := file_managerv1.NewFileManagerServiceClient(cc)
+	userHandler := v1.NewUserHandler(client, hdl, fClient)
 	userHandler.RegisterUserRoutes(server)
 	server.Run(conf.Service.Apigw.Http.Addr...)
 }

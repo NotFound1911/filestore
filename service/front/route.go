@@ -30,6 +30,8 @@ func registerRoutes(core *gin.Engine) {
 	fs.POST("/login", loginHandler())
 	fs.POST("/signup", signupHandler())
 	fs.GET("/register-successful", registerSuccessfulHandler())
+	fs.GET("/profile", profileHandler())
+	fs.GET("/list", listHandler())
 }
 
 // indexHandler 首页
@@ -89,5 +91,30 @@ func signupHandler() gin.HandlerFunc {
 func registerSuccessfulHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.HTML(http.StatusOK, "register_successful.html", gin.H{"title": "filestore"})
+	}
+}
+
+// profileHandler 基本信息
+func profileHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := profileRequest()
+		if err != nil || res.RespStatusCode != 200 {
+			c.JSON(http.StatusBadRequest, "请求错误")
+			return
+		}
+		// 登录成功页面
+		c.JSON(http.StatusOK, res.Result)
+	}
+}
+
+func listHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		res, err := listRequest()
+		if err != nil || res.RespStatusCode != 200 {
+			c.JSON(http.StatusBadRequest, "请求错误")
+			return
+		}
+		// 登录成功页面
+		c.JSON(http.StatusOK, res.Result)
 	}
 }
