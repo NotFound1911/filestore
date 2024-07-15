@@ -90,6 +90,7 @@ func (repo *fileManagerRepo) toFileMetaDomain(u dao.FileMetaInfo) domain.FileMet
 		Type:        u.Type,
 		Bucket:      u.Bucket,
 		StorageName: u.StorageName,
+		FileName:    u.FileName,
 	}
 }
 func (repo *fileManagerRepo) toUserFileDomain(u dao.UserFileInfo) domain.UserFile {

@@ -10,6 +10,7 @@ type FileMeta struct {
 	Type        string `json:"type"`         // 文件类别
 	Bucket      string `json:"bucket"`       // 桶
 	StorageName string `json:"storage_name"` // 存储名称
+	FileName    string `json:"file_name"`    // 文件名
 }
 
 type UserFile struct {

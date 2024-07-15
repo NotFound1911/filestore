@@ -26,6 +26,7 @@ type FileMetaInfo struct {
 	Type        string `gorm:"column:type;comment:文件类型"`
 	Bucket      string `gorm:"column:bucket;comment:桶"`
 	StorageName string `gorm:"column:storage_name;comment:存储名称"`
+	FileName    string `json:"file_name" grom:"-"` // 查询时返回
 }
 
 type UserFileInfo struct {
@@ -80,9 +81,11 @@ func (o *OrmFileManager) FindUserFileById(ctx context.Context, id int64) (UserFi
 }
 func (o *OrmFileManager) GetFileMetasByUserId(ctx context.Context, uid int64) ([]FileMetaInfo, error) {
 	var fileMetas []FileMetaInfo
-	err := o.db.WithContext(ctx).Joins("UserFileInfo").
-		Where("user_file_info.file_sha1 = file_meta_info.sha1 and user_file_info.user_id = ?", uid).
-		Find(&fileMetas).Error
+	query := `SELECT file_meta_info.id, user_file_info.file_name
+    FROM file_meta_info
+    JOIN user_file_info ON user_file_info.file_sha1 = file_meta_info.sha1
+    WHERE user_file_info.user_id = ?;`
+	err := o.db.Raw(query, uid).Scan(&fileMetas).Error
 	return fileMetas, err
 }
 func (o *OrmFileManager) GetUserIdsByFileSha1(ctx context.Context, sha1 string) ([]int64, error) {

@@ -38,12 +38,19 @@ func Run() {
 	r := etcd.New(cli)
 	cc, err := grpc.DialInsecure(context.Background(),
 		grpc.WithEndpoint(fmt.Sprintf("discovery:///%s", conf.Service.Account.Name)),
+		grpc.WithDiscovery(r),
+	)
+	if err != nil {
+		panic(err)
+	}
+	defer cc.Close()
+	client := accountv1.NewAccountServiceClient(cc)
+	fc, err := grpc.DialInsecure(context.Background(),
 		grpc.WithEndpoint(fmt.Sprintf("discovery:///%s", conf.Service.FileManager.Name)),
 		grpc.WithDiscovery(r),
 	)
-	defer cc.Close()
-	client := accountv1.NewAccountServiceClient(cc)
-	fClient := file_managerv1.NewFileManagerServiceClient(cc)
+	defer fc.Close()
+	fClient := file_managerv1.NewFileManagerServiceClient(fc)
 	userHandler := v1.NewUserHandler(client, hdl, fClient)
 	userHandler.RegisterUserRoutes(server)
 	server.Run(conf.Service.Apigw.Http.Addr...)
