@@ -70,5 +70,6 @@ func (f *FileManagerServiceServer) toFileMetaProto(meta domain.FileMeta) file_ma
 		Type:        meta.Type,
 		Bucket:      meta.Bucket,
 		StorageName: meta.StorageName,
+		FileName:    meta.FileName,
 	}
 }

@@ -153,16 +153,18 @@ func (u *UserHandler) FileList(ctx *gin.Context, uc jwt.UserClaims) (serv.Result
 		}, err
 	}
 	type file struct {
-		Bucket string
-		Name   string
-		Size   int64
+		Bucket   string `json:"bucket"`
+		FileName string `json:"file_name"`
+		Size     int64  `json:"size"`
+		Sha1     string `json:"sha1"`
 	}
 	result := make([]file, 0, len(res.GetFileMeta()))
 	for _, v := range res.FileMeta {
 		f := file{
-			Bucket: v.Bucket,
-			Name:   v.StorageName,
-			Size:   v.Size,
+			Bucket:   v.Bucket,
+			FileName: v.FileName,
+			Size:     v.Size,
+			Sha1:     v.Sha1,
 		}
 		result = append(result, f)
 	}

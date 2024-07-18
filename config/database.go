@@ -56,8 +56,8 @@ func initPGSQL(database *Database, conf *Configuration) *gorm.DB {
 	gormConfig := &gorm.Config{
 		DisableForeignKeyConstraintWhenMigrating: true, // 禁用自动创建外键约束
 		Logger: logger.New(getGormLogWriter(database, conf), logger.Config{
-			SlowThreshold: 200 * time.Millisecond, // 慢 SQL 阈值
-			LogLevel:      logger.Info,            // 日志级别
+			SlowThreshold: 1000 * time.Millisecond, // 慢 SQL 阈值
+			LogLevel:      logger.Info,             // 日志级别
 		}),
 	}
 

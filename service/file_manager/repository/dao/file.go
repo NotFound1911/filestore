@@ -19,13 +19,13 @@ type FileManagerDao interface {
 }
 
 type FileMetaInfo struct {
-	Id          int64  `gorm:"column:id;primaryKey;not null;autoIncrement;comment:自增ID"`
-	Sha1        string `gorm:"column:sha1;not null;unique;comment:文件sha1"`
-	Size        int64  `gorm:"column:size;not null;comment:文件size"`
-	Address     string `gorm:"column:address;comment:文件存储地址"`
-	Type        string `gorm:"column:type;comment:文件类型"`
-	Bucket      string `gorm:"column:bucket;comment:桶"`
-	StorageName string `gorm:"column:storage_name;comment:存储名称"`
+	Id          int64  `json:"id" gorm:"column:id;primaryKey;not null;autoIncrement;comment:自增ID"`
+	Sha1        string `json:"sha1" gorm:"column:sha1;not null;unique;comment:文件sha1"`
+	Size        int64  `json:"size" gorm:"column:size;not null;comment:文件size"`
+	Address     string `json:"address" gorm:"column:address;comment:文件存储地址"`
+	Type        string `json:"type" gorm:"column:type;comment:文件类型"`
+	Bucket      string `json:"bucket" gorm:"column:bucket;comment:桶"`
+	StorageName string `json:"storage_name" gorm:"column:storage_name;comment:存储名称"`
 	FileName    string `json:"file_name" grom:"-"` // 查询时返回
 }
 
@@ -81,7 +81,7 @@ func (o *OrmFileManager) FindUserFileById(ctx context.Context, id int64) (UserFi
 }
 func (o *OrmFileManager) GetFileMetasByUserId(ctx context.Context, uid int64) ([]FileMetaInfo, error) {
 	var fileMetas []FileMetaInfo
-	query := `SELECT file_meta_info.id, user_file_info.file_name
+	query := `SELECT file_meta_info.id,file_meta_info.size, file_meta_info.type,file_meta_info.bucket,file_meta_info.sha1  ,user_file_info.file_name
     FROM file_meta_info
     JOIN user_file_info ON user_file_info.file_sha1 = file_meta_info.sha1
     WHERE user_file_info.user_id = ?;`

@@ -15,11 +15,22 @@
     .file-list {
       margin-bottom: 20px;
     }
-    .file-item {
-      margin-bottom: 10px;
-    }
     button {
       margin-right: 10px;
+    }
+    .file-item {
+      margin-bottom: 8px; /* 设置文件条目之间的间距 */
+      font-family: Arial, sans-serif; /* 设置字体 */
+      font-size: 14px; /* 设置字体大小 */
+      color: #333; /* 设置文本颜色 */
+      background-color: #f0f0f0; /* 设置背景颜色 */
+      padding: 8px; /* 设置内边距 */
+      border-radius: 4px; /* 设置圆角 */
+    }
+
+    .file-item .highlight {
+      font-weight: bold; /* 设置高亮文本的粗体 */
+      color: #007bff; /* 设置高亮文本的颜色，这里使用蓝色 */
     }
   </style>
 </head>
@@ -29,9 +40,8 @@
   <p><strong>Email:</strong> <span id="userEmail"></span></p>
 </div>
 
-<div class="file-list">
-  <h2>File List</h2>
-  <div id="fileList"></div>
+<div id="fileList">
+  <!-- File items will be added here dynamically -->
 </div>
 
 <button id="uploadButton">Upload File</button>
@@ -51,7 +61,6 @@
             .catch(error => console.error('Error fetching profile:', error));
   }
 
-  // Function to fetch user's file list
   function fetchFileList() {
     fetch('http://localhost:8080/list')
             .then(response => response.json())
@@ -59,15 +68,30 @@
               const fileListDiv = document.getElementById('fileList');
               fileListDiv.innerHTML = ''; // Clear previous list
 
-              data.forEach(file => {
-                const fileItem = document.createElement('div');
-                fileItem.classList.add('file-item');
-                fileItem.innerHTML = `<span>${file.name}</span> <button onclick="downloadFile('${file.id}')">Download</button>`;
-                fileListDiv.appendChild(fileItem);
-              });
+              if (data.code === 2000) { // Check if response code is 2000 (success)
+                const files = data.data; // Access the 'data' array in the response
+
+                files.forEach(file => {
+                  const fileItem = document.createElement('div');
+                  fileItem.classList.add('file-item'); // Add 'file-item' class
+
+                  // Format size to include 'KB' suffix
+                  const fileSize = `${file.size}KB`;
+
+                  // Create a friendly display format with highlighted parts
+                  const displayText = `sha1:<span class="highlight">${file.sha1}</span>   path: /<span class="highlight">${file.bucket}/${file.file_name}</span>   size: <span class="highlight">${fileSize}</span>`;
+                  fileItem.innerHTML = displayText;
+
+                  fileListDiv.appendChild(fileItem);
+                });
+              } else {
+                console.error('Error fetching file list:', data.msg); // Log error message if response code is not 2000
+              }
             })
             .catch(error => console.error('Error fetching file list:', error));
   }
+
+
 
   // Function to handle file download
   function downloadFile(fileId) {
