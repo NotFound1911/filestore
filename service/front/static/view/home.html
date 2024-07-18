@@ -19,6 +19,9 @@
       margin-right: 10px;
     }
     .file-item {
+      display: flex; /* 使用 Flex 布局使得下载按钮能够在条目右边 */
+      align-items: center; /* 垂直居中对齐 */
+      justify-content: space-between; /* 在条目内部右对齐 */
       margin-bottom: 8px; /* 设置文件条目之间的间距 */
       font-family: Arial, sans-serif; /* 设置字体 */
       font-size: 14px; /* 设置字体大小 */
@@ -28,9 +31,18 @@
       border-radius: 4px; /* 设置圆角 */
     }
 
-    .file-item .highlight {
+    .file-item.highlight {
       font-weight: bold; /* 设置高亮文本的粗体 */
       color: #007bff; /* 设置高亮文本的颜色，这里使用蓝色 */
+    }
+
+    .download-btn {
+      padding: 6px 12px; /* 按钮内边距 */
+      background-color: #007bff; /* 按钮背景色 */
+      color: white; /* 按钮文字颜色 */
+      border: none; /* 去掉按钮边框 */
+      border-radius: 4px; /* 按钮圆角 */
+      cursor: pointer; /* 鼠标指针样式设为手型 */
     }
   </style>
 </head>
@@ -80,8 +92,18 @@
 
                   // Create a friendly display format with highlighted parts
                   const displayText = `sha1:<span class="highlight">${file.sha1}</span>   path: /<span class="highlight">${file.bucket}/${file.file_name}</span>   size: <span class="highlight">${fileSize}</span>`;
+
                   fileItem.innerHTML = displayText;
 
+                  // Create download button
+                  const downloadBtn = document.createElement('button');
+                  downloadBtn.textContent = 'Download';
+                  downloadBtn.classList.add('download-btn');
+                  downloadBtn.addEventListener('click', function() {
+                    downloadFile(file.sha1);
+                  });
+
+                  fileItem.appendChild(downloadBtn);
                   fileListDiv.appendChild(fileItem);
                 });
               } else {
@@ -91,13 +113,13 @@
             .catch(error => console.error('Error fetching file list:', error));
   }
 
-
-
-  // Function to handle file download
-  function downloadFile(fileId) {
-    // Assuming fileId is used to download the file
-    window.open(`https://api.example.com/download/${fileId}`, '_blank');
+  function downloadFile(sha1) {
+    // Prepare download request
+    const downloadUrl = `http://localhost:8888/api/storage/v1/file/download?sha1=${sha1}`;
+    window.open(downloadUrl, '_blank'); // Open download URL in a new tab/window
   }
+
+  fetchFileList(); // Fetch file list when the page loads
 
   // Event listener for upload button
   document.getElementById('uploadButton').addEventListener('click', () => {
