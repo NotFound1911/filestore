@@ -11,6 +11,6 @@ type LoginReq struct {
 }
 
 type DownloadReq struct {
-	Sha1 string `json:"sha1"  form:"sha1"`
-	Name string `json:"name" form:"name"`
+	FileName string `json:"file_name"`
+	FileSha1 string `json:"file_sha1"`
 }
