@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -32,6 +33,7 @@ func registerRoutes(core *gin.Engine) {
 	fs.GET("/register-successful", registerSuccessfulHandler())
 	fs.GET("/profile", profileHandler())
 	fs.GET("/list", listHandler())
+	fs.POST("/download", downloadHandler())
 }
 
 // indexHandler 首页
@@ -116,5 +118,21 @@ func listHandler() gin.HandlerFunc {
 		}
 		// 登录成功页面
 		c.JSON(http.StatusOK, res.Result)
+	}
+}
+
+func downloadHandler() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		req := &DownloadReq{}
+		if err := c.ShouldBind(req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		res, err := downloadUrlRequest(req)
+		if err != nil || res.RespStatusCode != 200 {
+			c.JSON(http.StatusBadRequest, "请求错误")
+			return
+		}
+		fmt.Println("res:", res)
 	}
 }

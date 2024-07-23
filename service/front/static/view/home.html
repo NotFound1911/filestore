@@ -100,7 +100,8 @@
                   downloadBtn.textContent = 'Download';
                   downloadBtn.classList.add('download-btn');
                   downloadBtn.addEventListener('click', function() {
-                    downloadFile(file.sha1);
+                    // Call function to initiate POST request
+                    initiatePostRequest(file.sha1, file.file_name);
                   });
 
                   fileItem.appendChild(downloadBtn);
@@ -112,12 +113,46 @@
             })
             .catch(error => console.error('Error fetching file list:', error));
   }
+  function initiatePostRequest(sha1, fileName) {
+    // Prepare POST request data
+    const postData = {
+      sha1: sha1,
+      file_name: fileName
+    };
 
-  function downloadFile(sha1) {
-    // Prepare download request
-    const downloadUrl = `http://localhost:8888/api/storage/v1/file/download?sha1=${sha1}`;
-    window.open(downloadUrl, '_blank'); // Open download URL in a new tab/window
+    // Fetch POST request
+    fetch('/download', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(postData)
+    })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.blob(); // Get the response as a Blob
+            })
+            .then(blob => {
+              // Create a temporary URL for the blob data
+              const url = window.URL.createObjectURL(blob);
+              // Create a link element
+              const link = document.createElement('a');
+              link.style.display = 'none';
+              link.href = url;
+              link.setAttribute('download', fileName); // Set the download attribute
+              // Append the link to the body
+              document.body.appendChild(link);
+              // Programmatically click the link to trigger the download
+              link.click();
+              // Clean up: remove the link and revoke the URL object
+              document.body.removeChild(link);
+              window.URL.revokeObjectURL(url);
+            })
+            .catch(error => console.error('Error initiating download:', error));
   }
+
 
   fetchFileList(); // Fetch file list when the page loads
 
