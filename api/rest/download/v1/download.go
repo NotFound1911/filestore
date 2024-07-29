@@ -42,7 +42,7 @@ func (h *Handler) DownloadURLHandler(ctx *gin.Context, req DownloadURLHandlerReq
 	// 查询文件元数据
 	res, err := h.fsClient.GetFileMeta(ctx, &file_managerv1.GetFileMetaReq{FileSha1: fileSha1})
 	if err != nil {
-		h.logger.Error(fmt.Sprintf("%v 获取元数据:%s失败", uId, fileSha1))
+		h.logger.Error(fmt.Sprintf("%v 获取元数据:%s失败,err:%v", uId, fileSha1, err))
 		return serv.Result{
 			Code: -1,
 			Msg:  fmt.Sprintf("元数据获取失败"),

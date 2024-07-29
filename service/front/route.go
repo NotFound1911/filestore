@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
+	"io/ioutil"
 	"net/http"
+	"strings"
 )
 
 var (
@@ -134,5 +136,36 @@ func downloadHandler() gin.HandlerFunc {
 			return
 		}
 		fmt.Println("res:", res)
+		if res.Code != 2000 {
+			c.JSON(http.StatusInternalServerError, res.Msg)
+		}
+		info := map[string]string{}
+		params := strings.Split(res.Data.(string), "&")
+		for _, param := range params {
+			keyValue := strings.Split(param, "=")
+			if len(keyValue) != 2 {
+				continue // Skip if format is incorrect
+			}
+			key := keyValue[0]
+			value := keyValue[1]
+			info[key] = value
+		}
+		info["filename"] = req.FileName
+		resp, err := downloadRequest(info)
+		if err != nil || res.RespStatusCode != 200 {
+			c.JSON(http.StatusBadRequest, "请求错误")
+			return
+		}
+		// 读取响应的内容
+		data, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			fmt.Printf("Error reading response body: %v\n", err)
+			return
+		}
+		// 设置响应头，告诉浏览器这是一个要下载的文件
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", req.FileName))
+		c.Header("Content-Type", "application/octet-stream")
+		// 将文件内容写入响应体
+		c.Data(http.StatusOK, "application/octet-stream", data)
 	}
 }
