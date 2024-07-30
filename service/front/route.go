@@ -169,3 +169,9 @@ func downloadHandler() gin.HandlerFunc {
 		c.Data(http.StatusOK, "application/octet-stream", data)
 	}
 }
+
+func uploadHandler() gin.HandlerFunc {
+	return func(context *gin.Context) {
+
+	}
+}

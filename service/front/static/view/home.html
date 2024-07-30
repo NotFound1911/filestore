@@ -55,7 +55,7 @@
 <div id="fileList">
   <!-- File items will be added here dynamically -->
 </div>
-
+<input type="file" id="fileInput">
 <button id="uploadButton">Upload File</button>
 
 <script>
@@ -156,11 +156,31 @@
 
   fetchFileList(); // Fetch file list when the page loads
 
-  // Event listener for upload button
   document.getElementById('uploadButton').addEventListener('click', () => {
-    // Implement your upload functionality here, e.g., open a modal or redirect to upload page
-    alert('Implement your upload functionality here.');
+    let formData = new FormData();
+    let fileInput = document.getElementById('fileInput');
+    formData.append('file', fileInput.files[0]);
+
+    fetch('/api/storage/v1/upload/upload-file', {
+      method: 'POST',
+      body: formData
+    })
+            .then(response => {
+              if (!response.ok) {
+                throw new Error('Network response was not ok');
+              }
+              return response.json();
+            })
+            .then(data => {
+              console.log('Upload successful:', data);
+              // Handle successful upload, e.g., show success message or update UI
+            })
+            .catch(error => {
+              console.error('Error during upload:', error);
+              // Handle error, e.g., show error message or log to console
+            });
   });
+
 
   // Fetch user profile and file list on page load
   document.addEventListener('DOMContentLoaded', () => {
