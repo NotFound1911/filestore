@@ -1,10 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
+	"io"
 	"io/ioutil"
+	"log"
+	"mime/multipart"
 	"net/http"
 	"strings"
 )
@@ -36,6 +40,7 @@ func registerRoutes(core *gin.Engine) {
 	fs.GET("/profile", profileHandler())
 	fs.GET("/list", listHandler())
 	fs.POST("/download", downloadHandler())
+	fs.POST("/upload", uploadHandler())
 }
 
 // indexHandler 首页
@@ -171,7 +176,60 @@ func downloadHandler() gin.HandlerFunc {
 }
 
 func uploadHandler() gin.HandlerFunc {
-	return func(context *gin.Context) {
+	return func(c *gin.Context) {
+		url := "http://localhost:8889/api/storage/v1/upload/upload-file"
+		method := "POST"
 
+		// 1. 从form表单中获得文件内容句柄
+		file, head, err := c.Request.FormFile("file")
+		if err != nil {
+			log.Printf("Failed to get form data, err:%s\n", err.Error())
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+		defer file.Close()
+
+		// 创建一个缓冲区来写入 multipart 数据
+		body := &bytes.Buffer{}
+		writer := multipart.NewWriter(body)
+
+		// 创建一个文件字段
+		part, err := writer.CreateFormFile("file", head.Filename)
+		if err != nil {
+			fmt.Println("创建 form 文件字段失败:", err)
+			return
+		}
+
+		// 将文件内容写入 part
+		_, err = io.Copy(part, file)
+		if err != nil {
+			fmt.Println("写入文件内容到 form 失败:", err)
+			return
+		}
+
+		// 必须调用 writer.Close() 完成 multipart 数据的写入
+		writer.Close()
+		client := &http.Client{}
+		req, err := http.NewRequest(method, url, body)
+
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		req.Header.Add("Authorization", fmt.Sprintf("%s %s", X_Refresh_Token, X_Jwt_Token))
+		req.Header.Set("Content-Type", writer.FormDataContentType())
+		res, err := client.Do(req)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		defer res.Body.Close()
+
+		resp, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		c.JSON(http.StatusOK, fmt.Sprintf("上传成功:%v", string(resp)))
 	}
 }

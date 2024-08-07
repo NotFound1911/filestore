@@ -161,7 +161,7 @@
     let fileInput = document.getElementById('fileInput');
     formData.append('file', fileInput.files[0]);
 
-    fetch('/api/storage/v1/upload/upload-file', {
+    fetch('/upload', {
       method: 'POST',
       body: formData
     })
